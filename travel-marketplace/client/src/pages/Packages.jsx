@@ -6,7 +6,7 @@ import FilterBar from '../components/FilterBar';
 import Loading from '../components/Loading';
 
 export default function Packages() {
-  const [packages, setPackages] = useState([]);
+  const [allPackages, setAllPackages] = useState([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
@@ -26,28 +26,7 @@ export default function Packages() {
         const query = params.toString();
         const data = await apiFetch(`/api/packages${query ? `?${query}` : ''}`);
         if (!ignore) {
-          let filtered = data.packages || [];
-          
-          // Apply price filter
-          if (priceRange !== 'all') {
-            filtered = filtered.filter((pkg) => {
-              const price = pkg.price || 0;
-              switch (priceRange) {
-                case '0-5000':
-                  return price < 5000;
-                case '5000-10000':
-                  return price >= 5000 && price < 10000;
-                case '10000-20000':
-                  return price >= 10000 && price < 20000;
-                case '20000+':
-                  return price >= 20000;
-                default:
-                  return true;
-              }
-            });
-          }
-          
-          setPackages(filtered);
+          setAllPackages(data.packages || []);
         }
       } catch (err) {
         if (!ignore) setError(err.message || 'Failed to load packages');
@@ -60,7 +39,22 @@ export default function Packages() {
     return () => {
       ignore = true;
     };
-  }, [search, category, priceRange]);
+  }, [search, category]);
+
+  // Apply price filter client-side (no re-fetch needed)
+  const packages = useMemo(() => {
+    if (priceRange === 'all') return allPackages;
+    return allPackages.filter((pkg) => {
+      const price = pkg.price || 0;
+      switch (priceRange) {
+        case '0-5000': return price < 5000;
+        case '5000-10000': return price >= 5000 && price < 10000;
+        case '10000-20000': return price >= 10000 && price < 20000;
+        case '20000+': return price >= 20000;
+        default: return true;
+      }
+    });
+  }, [allPackages, priceRange]);
 
   const groupedCount = useMemo(() => {
     return packages.reduce((acc, item) => {

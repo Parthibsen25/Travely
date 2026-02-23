@@ -10,7 +10,8 @@ function normalizeSessionUser(payload) {
     name: payload.name || payload.businessName || '',
     email: payload.email,
     role: payload.role,
-    businessName: payload.businessName || null
+    businessName: payload.businessName || null,
+    createdAt: payload.createdAt || null
   };
 }
 

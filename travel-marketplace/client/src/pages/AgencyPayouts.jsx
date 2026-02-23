@@ -49,12 +49,12 @@ export default function AgencyPayouts() {
                   <p className="text-sm text-slate-600">Bookings: {payout.bookingIds?.length || 0}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-slate-900">Rs {payout.payoutAmount}</p>
+                  <p className="text-lg font-bold text-slate-900">₹{payout.payoutAmount}</p>
                   <p className="text-xs uppercase tracking-wide text-slate-500">{payout.status}</p>
                 </div>
               </div>
               <p className="mt-2 text-sm text-slate-500">
-                Revenue: Rs {payout.totalRevenue} | Commission: Rs {payout.commissionDeducted}
+                Revenue: ₹{payout.totalRevenue} | Commission: ₹{payout.commissionDeducted}
               </p>
             </article>
           ))}

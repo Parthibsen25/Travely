@@ -12,14 +12,14 @@ const {
   getPackageById,
   listPackages,
   getPackagesByDuration,
-  getPackagesBySeason,
-  getPackagesByTheme
+  getPackagesByTheme,
+  getStats
 } = require('../controllers/packageController');
 
 // Public routes
+router.get('/stats', getStats);
 router.get('/', listPackages);
 router.get('/by-duration', getPackagesByDuration);
-router.get('/by-season', getPackagesBySeason);
 router.get('/by-theme', getPackagesByTheme);
 
 // Agency-only routes

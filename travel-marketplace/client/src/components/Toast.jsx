@@ -18,7 +18,7 @@ export default function Toast({ message, type = 'info', onClose, duration = 3000
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+    <div className="animate-slide-up">
       <div className={`${bgColors[type]} rounded-xl px-6 py-4 text-white shadow-lg`}>
         <div className="flex items-center gap-3">
           <p className="font-semibold">{message}</p>

@@ -20,7 +20,8 @@ const BookingSchema = new mongoose.Schema(
     payoutId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payout' },
     refundId: { type: String },
     refundAmount: { type: Number },
-    cancelledAt: { type: Date }
+    cancelledAt: { type: Date },
+    confirmedAt: { type: Date }
   },
   { timestamps: true }
 );

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import PackageCard from '../components/PackageCard';
 import Loading from '../components/Loading';
+import DurationFilter from '../components/DurationFilter';
+import ThemeBrowser from '../components/ThemeBrowser';
 
 export default function UserDashboard() {
   const [packages, setPackages] = useState([]);
@@ -154,6 +156,20 @@ export default function UserDashboard() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Browse by Duration */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-display text-2xl font-bold text-slate-900 mb-1">Browse by Duration</h2>
+        <p className="text-sm text-slate-600 mb-4">Find the perfect trip length for your schedule</p>
+        <DurationFilter />
+      </section>
+
+      {/* Browse by Theme */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-display text-2xl font-bold text-slate-900 mb-1">Holiday Themes</h2>
+        <p className="text-sm text-slate-600 mb-4">Explore packages by your preferred travel style</p>
+        <ThemeBrowser />
       </section>
     </div>
   );

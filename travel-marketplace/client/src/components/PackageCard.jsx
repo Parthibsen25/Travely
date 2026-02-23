@@ -111,7 +111,7 @@ export default function PackageCard({ pkg, showAgency = true }) {
 
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold text-slate-900">Rs {pkg.price?.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-slate-900">₹{pkg.price?.toLocaleString()}</p>
             <p className="text-sm text-slate-500">{pkg.duration} days</p>
           </div>
         </div>

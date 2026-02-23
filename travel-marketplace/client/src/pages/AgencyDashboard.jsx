@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch, apiUrl, mediaUrl } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 export default function AgencyDashboard() {
+  const { showToast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -13,6 +15,8 @@ export default function AgencyDashboard() {
   const [itinerary, setItinerary] = useState([{ day: 1, title: '', description: '' }]);
   const [cancellationPolicy, setCancellationPolicy] = useState([{ daysBefore: 7, refundPercent: 50 }]);
   const [offers, setOffers] = useState([{ title: '', discountPercent: 0 }]);
+  const [bestSeasons, setBestSeasons] = useState([]);
+  const [themes, setThemes] = useState([]);
   const [editingPackageId, setEditingPackageId] = useState('');
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +62,8 @@ export default function AgencyDashboard() {
     setItinerary([{ day: 1, title: '', description: '' }]);
     setCancellationPolicy([{ daysBefore: 7, refundPercent: 50 }]);
     setOffers([{ title: '', discountPercent: 0 }]);
+    setBestSeasons([]);
+    setThemes([]);
     setEditingPackageId('');
     setUploadError('');
   };
@@ -97,6 +103,8 @@ export default function AgencyDashboard() {
           }))
         : [{ title: '', discountPercent: 0 }]
     );
+    setBestSeasons(pkg.bestSeasons || []);
+    setThemes(pkg.themes || []);
     setUploadError('');
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,7 +161,9 @@ export default function AgencyDashboard() {
         duration: Number(duration),
         itinerary,
         cancellationPolicy,
-        offers
+        offers,
+        bestSeasons,
+        themes
       };
 
       if (editingPackageId) {
@@ -171,7 +181,7 @@ export default function AgencyDashboard() {
       await fetchPackages();
       const successMessage = editingPackageId ? 'Package updated' : 'Package created';
       resetForm();
-      window.alert(successMessage);
+      showToast(successMessage, 'success');
     } catch (err) {
       setError(err.message || (editingPackageId ? 'Failed to update package' : 'Failed to create package'));
     } finally {
@@ -391,6 +401,49 @@ export default function AgencyDashboard() {
             </div>
           </div>
 
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Best Seasons</h3>
+            <div className="flex flex-wrap gap-3">
+              {['jan-feb-mar', 'apr-may-jun', 'jul-aug-sep', 'oct-nov-dec'].map((season) => (
+                <label key={season} className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bestSeasons.includes(season)}
+                    onChange={(e) => {
+                      if (e.target.checked) setBestSeasons([...bestSeasons, season]);
+                      else setBestSeasons(bestSeasons.filter((s) => s !== season));
+                    }}
+                    className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                  />
+                  <span className="text-xs font-medium text-slate-600 capitalize">{season.replace(/-/g, ' / ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Holiday Themes</h3>
+            <div className="flex flex-wrap gap-2">
+              {['beach', 'hill-station', 'wildlife', 'heritage', 'pilgrimage', 'honeymoon', 'family', 'adventure', 'luxury', 'backpacking'].map((theme) => (
+                <button
+                  key={theme}
+                  type="button"
+                  onClick={() => {
+                    if (themes.includes(theme)) setThemes(themes.filter((t) => t !== theme));
+                    else setThemes([...themes, theme]);
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ${
+                    themes.includes(theme)
+                      ? 'bg-cyan-600 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {theme.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={loading || uploadingImage}
@@ -415,15 +468,32 @@ export default function AgencyDashboard() {
                     {pkg.destination} | {pkg.category}
                   </p>
                   <p className="text-sm text-slate-500">
-                    Rs {pkg.price} | {pkg.duration} days
+                    ₹{pkg.price} | {pkg.duration} days
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => startEdit(pkg)}
-                    className="mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Edit
-                  </button>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(pkg)}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!window.confirm('Delete this package?')) return;
+                        try {
+                          await apiFetch(`/api/packages/${pkg._id}`, { method: 'DELETE' });
+                          await fetchPackages();
+                        } catch (err) {
+                          setError(err.message || 'Failed to delete package');
+                        }
+                      }}
+                      className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 export default function Booking() {
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -91,7 +93,7 @@ export default function Booking() {
         body: JSON.stringify({ packageId, travelDate, numberOfPeople: Number(numberOfPeople) })
       });
 
-      window.alert(data.message || 'Booking created.');
+      showToast(data.message || 'Booking created.', 'success');
       navigate(`/app/booking/result/${data.bookingId}`);
     } catch (err) {
       setError(err.message || 'Failed to create booking');
@@ -127,7 +129,7 @@ export default function Booking() {
               <option value="">Choose a package...</option>
               {packages.map((pkg) => (
                 <option key={pkg._id} value={pkg._id}>
-                  {pkg.title} - {pkg.destination} (Rs {pkg.price?.toLocaleString()} / person)
+                  {pkg.title} - {pkg.destination} (₹{pkg.price?.toLocaleString()} / person)
                 </option>
               ))}
             </select>
@@ -213,7 +215,7 @@ export default function Booking() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Price / person:</span>
-                <span className="font-semibold text-slate-900">Rs {selectedPackage.price?.toLocaleString()}</span>
+                <span className="font-semibold text-slate-900">₹{selectedPackage.price?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">People:</span>
@@ -221,15 +223,15 @@ export default function Booking() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Base total:</span>
-                <span className="font-semibold text-slate-900">Rs {totalBase.toLocaleString()}</span>
+                <span className="font-semibold text-slate-900">₹{totalBase.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Discount:</span>
-                <span className="font-semibold text-emerald-600">Rs {totalDiscount.toLocaleString()}</span>
+                <span className="font-semibold text-emerald-600">₹{totalDiscount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Final total:</span>
-                <span className="font-semibold text-slate-900">Rs {estimatedTotal.toLocaleString()}</span>
+                <span className="font-semibold text-slate-900">₹{estimatedTotal.toLocaleString()}</span>
               </div>
               {selectedPackage.category && (
                 <div className="flex justify-between">

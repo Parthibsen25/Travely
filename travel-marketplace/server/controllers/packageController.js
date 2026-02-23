@@ -3,6 +3,34 @@ const Offer = require('../models/Offer');
 const mongoose = require('mongoose');
 const { computeFinalPrice } = require('../services/pricingService');
 
+// GET /api/packages/stats - public stats for homepage
+exports.getStats = async (req, res) => {
+  try {
+    const Agency = require('../models/Agency');
+    const Booking = require('../models/Booking');
+
+    const [packages, agencies, bookings, ratingAgg] = await Promise.all([
+      Package.countDocuments({ status: 'ACTIVE' }),
+      Agency.countDocuments({ verificationStatus: 'VERIFIED' }),
+      Booking.countDocuments(),
+      Package.aggregate([
+        { $match: { status: 'ACTIVE', rating: { $gt: 0 } } },
+        { $group: { _id: null, avgRating: { $avg: '$rating' } } }
+      ])
+    ]);
+
+    res.json({
+      packages,
+      agencies,
+      bookings,
+      avgRating: ratingAgg[0]?.avgRating || 0
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.listPackages = async (req, res) => {
   try {
     const { destination, category, q } = req.query;
@@ -36,10 +64,51 @@ exports.listPackages = async (req, res) => {
   }
 };
 
+exports.getStats = async (req, res) => {
+  try {
+    const Agency = require('../models/Agency');
+    const Booking = require('../models/Booking');
+    const [packages, agencies, bookings, ratingAgg] = await Promise.all([
+      Package.countDocuments({ status: 'ACTIVE' }),
+      Agency.countDocuments({ verificationStatus: 'VERIFIED' }),
+      Booking.countDocuments(),
+      Package.aggregate([
+        { $match: { status: 'ACTIVE', rating: { $gt: 0 } } },
+        { $group: { _id: null, avgRating: { $avg: '$rating' } } }
+      ])
+    ]);
+    res.json({
+      packages,
+      agencies,
+      bookings,
+      avgRating: ratingAgg[0]?.avgRating || 0
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const ALLOWED_PACKAGE_FIELDS = [
+  'title', 'description', 'destination', 'category', 'price', 'duration',
+  'itinerary', 'cancellationPolicy', 'offers', 'imageUrl',
+  'staffPick', 'bestSeasons', 'themes'
+];
+
+function pickFields(body) {
+  const result = {};
+  for (const key of ALLOWED_PACKAGE_FIELDS) {
+    if (body[key] !== undefined) result[key] = body[key];
+  }
+  return result;
+}
+
 exports.createPackage = async (req, res) => {
   try {
     const agencyId = req.user.id;
-    const payload = { ...req.body, agencyId };
+    // Whitelist allowed fields to prevent mass-assignment
+    const { title, description, destination, category, price, duration, itinerary, cancellationPolicy, offers, imageUrl, bestSeasons, themes } = req.body;
+    const payload = { title, description, destination, category, price, duration, itinerary, cancellationPolicy, offers, imageUrl, bestSeasons, themes, agencyId };
     const pkg = await Package.create(payload);
     res.status(201).json({ package: pkg });
   } catch (err) {
@@ -81,7 +150,11 @@ exports.updatePackage = async (req, res) => {
     const pkg = await Package.findById(req.params.id);
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
     if (pkg.agencyId.toString() !== agencyId) return res.status(403).json({ message: 'Forbidden' });
-    Object.assign(pkg, req.body);
+    // Whitelist allowed fields
+    const allowed = ['title', 'description', 'destination', 'category', 'price', 'duration', 'itinerary', 'cancellationPolicy', 'offers', 'imageUrl', 'bestSeasons', 'themes', 'status'];
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) pkg[key] = req.body[key];
+    }
     await pkg.save();
     res.json({ package: pkg });
   } catch (err) {
@@ -123,30 +196,6 @@ exports.getPackagesByDuration = async (req, res) => {
     const total = await Package.countDocuments(filter);
 
     res.json({ packages, total });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// GET /api/packages/by-season?season=jul-aug-sep&limit=10
-exports.getPackagesBySeason = async (req, res) => {
-  try {
-    const { season, limit = 10 } = req.query;
-    const filter = { status: 'ACTIVE', staffPick: true };
-
-    if (season) {
-      filter.bestSeasons = season;
-    }
-
-    const packages = await Package.find(filter)
-      .sort({ rating: -1, reviewCount: -1 })
-      .limit(Number(limit))
-      .populate('agencyId', 'businessName verificationStatus')
-      .select('title description destination category price duration agencyId status imageUrl rating reviewCount staffPick bestSeasons themes createdAt')
-      .lean();
-
-    res.json({ packages });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

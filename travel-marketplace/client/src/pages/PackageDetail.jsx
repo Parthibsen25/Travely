@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiFetch, mediaUrl } from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import Loading from '../components/Loading';
 import Modal from '../components/Modal';
 
@@ -9,7 +10,9 @@ export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useContext(AuthContext);
+  const { showToast } = useToast();
   const [packageData, setPackageData] = useState(null);
+  const [pricing, setPricing] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,7 +34,7 @@ export default function PackageDetail() {
       const data = await apiFetch(`/api/packages/${id}`);
       setPackageData(data.package);
       if (data.pricing) {
-        // Pricing info available
+        setPricing(data.pricing);
       }
     } catch (err) {
       setError(err.message || 'Failed to load package');
@@ -96,7 +99,7 @@ export default function PackageDetail() {
       await loadReviews();
       await loadPackage();
     } catch (err) {
-      alert(err.message || 'Failed to submit review');
+      showToast(err.message || 'Failed to submit review', 'error');
     }
   }
 
@@ -208,6 +211,22 @@ export default function PackageDetail() {
                 </div>
               </div>
             )}
+
+            {packageData.cancellationPolicy && packageData.cancellationPolicy.length > 0 && (
+              <div className="mb-6">
+                <h2 className="font-display text-xl font-bold text-slate-900 mb-3">Cancellation Policy</h2>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="space-y-2">
+                    {packageData.cancellationPolicy.map((slab, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">{slab.daysBefore}+ days before travel</span>
+                        <span className="font-semibold text-slate-900">{slab.refundPercent}% refund</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -259,7 +278,17 @@ export default function PackageDetail() {
         <div className="space-y-6">
           <div className="sticky top-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm animate-slide-in-right">
             <div className="mb-4">
-              <p className="text-3xl font-bold text-slate-900">Rs {packageData.price?.toLocaleString()}</p>
+              {pricing && pricing.discountAmount > 0 ? (
+                <>
+                  <p className="text-sm text-slate-500 line-through">₹{packageData.price?.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-slate-900">₹{pricing.finalPrice?.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    Save ₹{pricing.discountAmount?.toLocaleString()} ({pricing.discountLabel || 'offer applied'})
+                  </p>
+                </>
+              ) : (
+                <p className="text-3xl font-bold text-slate-900">₹{packageData.price?.toLocaleString()}</p>
+              )}
               <p className="text-sm text-slate-500">per person</p>
             </div>
 

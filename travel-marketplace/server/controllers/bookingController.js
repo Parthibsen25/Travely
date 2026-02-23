@@ -134,4 +134,34 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
+// Confirm booking (since payments are disabled, allow direct confirmation)
+exports.confirmBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ message: 'Invalid booking id' });
+    }
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    // only owner or admin
+    if (req.user.role !== 'ADMIN' && booking.userId.toString() !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    if (booking.status !== 'PENDING_PAYMENT') {
+      return res.status(400).json({ message: `Cannot confirm booking in ${booking.status} status` });
+    }
+
+    booking.status = 'CONFIRMED';
+    booking.confirmedAt = new Date();
+    await booking.save();
+    return res.json({ message: 'Booking confirmed successfully.', booking });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Webhook handler will be in payment controller (separate)

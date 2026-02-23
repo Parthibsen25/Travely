@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 const statusClass = {
   PENDING_PAYMENT: 'bg-amber-100 text-amber-700',
@@ -17,6 +18,7 @@ function getBookingAmount(booking, rawAmount) {
 }
 
 export default function MyTrips() {
+  const { showToast } = useToast();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,10 +51,10 @@ export default function MyTrips() {
         method: 'POST',
         body: JSON.stringify({})
       });
-      window.alert(data.message || 'Booking cancelled.');
+      showToast(data.message || 'Booking cancelled.', 'success');
       await fetchBookings();
     } catch (err) {
-      window.alert(err.message || 'Failed to cancel booking');
+      showToast(err.message || 'Failed to cancel booking', 'error');
     } finally {
       setBusyId('');
     }
@@ -126,15 +128,15 @@ export default function MyTrips() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Base Price</p>
-                    <p className="mt-1 font-semibold text-slate-900">Rs {getBookingAmount(booking, booking.basePrice).toLocaleString()}</p>
+                    <p className="mt-1 font-semibold text-slate-900">₹{getBookingAmount(booking, booking.basePrice).toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Discount</p>
-                    <p className="mt-1 font-semibold text-emerald-600">Rs {getBookingAmount(booking, booking.discountApplied).toLocaleString()}</p>
+                    <p className="mt-1 font-semibold text-emerald-600">₹{getBookingAmount(booking, booking.discountApplied).toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Final Amount</p>
-                    <p className="mt-1 font-semibold text-slate-900">Rs {getBookingAmount(booking, booking.finalAmount).toLocaleString()}</p>
+                    <p className="mt-1 font-semibold text-slate-900">₹{getBookingAmount(booking, booking.finalAmount).toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -145,6 +147,28 @@ export default function MyTrips() {
                   >
                     View Details
                   </Link>
+
+                  {booking.status === 'PENDING_PAYMENT' && (
+                    <button
+                      type="button"
+                      disabled={busyId === booking._id}
+                      onClick={async () => {
+                        setBusyId(booking._id);
+                        try {
+                          await apiFetch(`/api/bookings/${booking._id}/confirm`, { method: 'POST' });
+                          showToast('Booking confirmed!', 'success');
+                          await fetchBookings();
+                        } catch (err) {
+                          showToast(err.message || 'Failed to confirm', 'error');
+                        } finally {
+                          setBusyId('');
+                        }
+                      }}
+                      className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {busyId === booking._id ? 'Confirming...' : 'Confirm'}
+                    </button>
+                  )}
 
                   {booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && (
                     <button

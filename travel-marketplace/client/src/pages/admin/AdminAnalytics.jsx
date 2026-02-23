@@ -36,7 +36,7 @@ export default function AdminAnalytics() {
     { title: 'Pending Verifications', value: stats.pendingAgencyVerifications },
     { title: 'Total Bookings', value: stats.totalBookings },
     { title: 'Disputed Bookings', value: stats.disputedBookings },
-    { title: 'Commission Revenue', value: `Rs ${stats.totalCommissionRevenue}` }
+    { title: 'Commission Revenue', value: `₹${stats.totalCommissionRevenue}` }
   ];
 
   return (

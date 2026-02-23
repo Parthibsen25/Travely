@@ -23,6 +23,7 @@ import BookingResult from './pages/BookingResult';
 import MyTrips from './pages/MyTrips';
 import SavedTrips from './pages/SavedTrips';
 import Wishlist from './pages/Wishlist';
+import Profile from './pages/Profile';
 
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPayouts from './pages/AgencyPayouts';
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="my-trips" element={<MyTrips />} />
           <Route path="saved-trips" element={<SavedTrips />} />
           <Route path="wishlist" element={<Wishlist />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
 

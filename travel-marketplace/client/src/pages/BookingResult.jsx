@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 function getBookingTotalAmount(booking) {
   if (!booking) return 0;
@@ -20,6 +21,7 @@ function getBookingAmount(booking, rawAmount) {
 
 export default function BookingResult() {
   const { id } = useParams();
+  const { showToast } = useToast();
   const [booking, setBooking] = useState(null);
   const [statusText, setStatusText] = useState('Checking booking status...');
 
@@ -32,6 +34,10 @@ export default function BookingResult() {
         if (!cancelled) {
           setBooking(data.booking);
           setStatusText(data.booking.status);
+          // Stop polling on terminal states
+          if (['CONFIRMED', 'CANCELLED', 'COMPLETED', 'REFUNDED'].includes(data.booking.status)) {
+            window.clearInterval(intervalRef);
+          }
         }
       } catch (err) {
         if (!cancelled) setStatusText(err.message || 'Error fetching booking');
@@ -39,11 +45,11 @@ export default function BookingResult() {
     }
 
     check();
-    const interval = window.setInterval(check, 3000);
+    const intervalRef = window.setInterval(check, 3000);
 
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      window.clearInterval(intervalRef);
     };
   }, [id]);
 
@@ -70,13 +76,13 @@ export default function BookingResult() {
               <span className="font-semibold text-slate-700">People:</span> {booking.numberOfPeople}
             </p>
             <p>
-              <span className="font-semibold text-slate-700">Base Amount:</span> Rs {baseAmount.toLocaleString()}
+              <span className="font-semibold text-slate-700">Base Amount:</span> ₹{baseAmount.toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold text-slate-700">Discount:</span> Rs {discountAmount.toLocaleString()}
+              <span className="font-semibold text-slate-700">Discount:</span> ₹{discountAmount.toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold text-slate-700">Final Amount:</span> Rs {finalAmount.toLocaleString()}
+              <span className="font-semibold text-slate-700">Final Amount:</span> ₹{finalAmount.toLocaleString()}
             </p>
             <p className="sm:col-span-2">
               <span className="font-semibold text-slate-700">Booking ID:</span> {booking._id}
@@ -86,9 +92,26 @@ export default function BookingResult() {
       </div>
 
       {isPending && (
-        <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-700">
-          Payments are temporarily disabled in this environment.
-        </p>
+        <div className="mt-4 space-y-2">
+          <p className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-700">
+            Payments are temporarily disabled. Click below to confirm your booking directly.
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                await apiFetch(`/api/bookings/${id}/confirm`, { method: 'POST' });
+                const data = await apiFetch(`/api/bookings/${id}`);
+                setBooking(data.booking);
+                setStatusText(data.booking.status);
+              } catch (err) {
+                showToast(err.message || 'Failed to confirm', 'error');
+              }
+            }}
+            className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 hover:scale-105"
+          >
+            Confirm Booking Now
+          </button>
+        </div>
       )}
 
       <div className="mt-6 flex flex-wrap gap-2">

@@ -148,11 +148,46 @@ exports.me = async (req, res) => {
         id: String(user._id),
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        createdAt: user.createdAt
       }
     });
   } catch (err) {
     res.clearCookie('token');
     return res.json({ user: null });
+  }
+};
+
+exports.updateMe = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (email !== user.email) {
+      const existing = await User.findOne({ email });
+      if (existing) return res.status(409).json({ message: 'Email already registered' });
+      user.email = email;
+    }
+
+    user.name = name;
+    await user.save();
+
+    res.json({
+      user: {
+        id: String(user._id),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
