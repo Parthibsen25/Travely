@@ -165,6 +165,33 @@ exports.updateMe = async (req, res) => {
       return res.status(400).json({ message: 'Name and email are required' });
     }
 
+    if (req.user.role === 'AGENCY') {
+      const agency = await Agency.findById(req.user.id);
+      if (!agency) return res.status(404).json({ message: 'Agency not found' });
+
+      if (email !== agency.email) {
+        const existing = await Agency.findOne({ email });
+        if (existing) return res.status(409).json({ message: 'Email already registered' });
+        agency.email = email;
+      }
+
+      agency.businessName = name;
+      await agency.save();
+
+      return res.json({
+        user: {
+          id: String(agency._id),
+          name: agency.businessName,
+          businessName: agency.businessName,
+          email: agency.email,
+          role: 'AGENCY',
+          verificationStatus: agency.verificationStatus,
+          commissionTier: agency.commissionTier,
+          createdAt: agency.createdAt
+        }
+      });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -208,16 +235,18 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ message: 'New password and confirm password do not match' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    // Support both USER and AGENCY
+    const Model = req.user.role === 'AGENCY' ? Agency : User;
+    const account = await Model.findById(req.user.id);
+    if (!account) return res.status(404).json({ message: 'Account not found' });
 
-    const isMatch = await user.matchPassword(oldPassword);
+    const isMatch = await account.matchPassword(oldPassword);
     if (!isMatch) {
       return res.status(401).json({ message: 'Old password is incorrect' });
     }
 
-    user.password = newPassword;
-    await user.save();
+    account.password = newPassword;
+    await account.save();
 
     return res.json({ message: 'Password changed successfully' });
   } catch (err) {

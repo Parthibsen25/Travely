@@ -10,7 +10,7 @@ router.post('/agency-register', agencyRegister);
 router.post('/agency-login', agencyLogin);
 router.post('/logout', logout);
 router.get('/me', me);
-router.put('/me', protect, authorizeRoles('USER'), updateMe);
-router.put('/change-password', protect, authorizeRoles('USER'), changePassword);
+router.put('/me', protect, authorizeRoles('USER', 'AGENCY'), updateMe);
+router.put('/change-password', protect, authorizeRoles('USER', 'AGENCY'), changePassword);
 
 module.exports = router;

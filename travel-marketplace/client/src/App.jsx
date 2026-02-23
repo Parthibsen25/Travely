@@ -31,6 +31,7 @@ import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPayouts from './pages/AgencyPayouts';
 import AgencyCoupons from './pages/AgencyCoupons';
 import AgencyRequests from './pages/AgencyRequests';
+import AgencyProfile from './pages/AgencyProfile';
 import MyRequests from './pages/MyRequests';
 
 import NotFound from './pages/NotFound';
@@ -130,6 +131,7 @@ export default function App() {
           <Route path="dashboard" element={<AgencyDashboard />} />
           <Route path="coupons" element={<AgencyCoupons />} />
           <Route path="requests" element={<AgencyRequests />} />
+          <Route path="profile" element={<AgencyProfile />} />
           <Route path="payouts" element={<AgencyPayouts />} />
         </Route>
       </Route>
