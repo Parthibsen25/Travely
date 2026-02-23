@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AppLogo from '../components/AppLogo';
+import NotificationBell from '../components/NotificationBell';
 
 const linkClass = ({ isActive }) =>
   `rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-300 ${
@@ -14,6 +15,7 @@ export default function AgencyLayout() {
 
   const navLinks = [
     { to: '/agency/dashboard', label: 'Dashboard' },
+    { to: '/agency/coupons', label: 'Coupons' },
     { to: '/agency/payouts', label: 'Payouts' }
   ];
 
@@ -30,6 +32,7 @@ export default function AgencyLayout() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold text-slate-900">{user?.name}</p>
               <p className="text-xs uppercase tracking-wider text-slate-500">Agency Panel</p>

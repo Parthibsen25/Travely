@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AppLogo from '../components/AppLogo';
+import NotificationBell from '../components/NotificationBell';
 
 const navClass = ({ isActive }) =>
   `block rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
@@ -18,6 +19,10 @@ export default function AdminLayout() {
           <AppLogo to="/admin" compact />
 
           <p className="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Admin Console</p>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs text-slate-400">Alerts</span>
+            <NotificationBell />
+          </div>
           <nav className="mt-3 space-y-2">
             <NavLink to="/admin" end className={navClass}>
               Overview
@@ -27,6 +32,9 @@ export default function AdminLayout() {
             </NavLink>
             <NavLink to="/admin/bookings" className={navClass}>
               Bookings
+            </NavLink>
+            <NavLink to="/admin/coupons" className={navClass}>
+              Coupons
             </NavLink>
             <NavLink to="/admin/analytics" className={navClass}>
               Analytics

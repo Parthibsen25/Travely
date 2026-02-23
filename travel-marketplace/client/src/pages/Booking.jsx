@@ -17,6 +17,10 @@ export default function Booking() {
   const [packageId, setPackageId] = useState(searchParams.get('packageId') || '');
   const [travelDate, setTravelDate] = useState('');
   const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponResult, setCouponResult] = useState(null); // { valid, code, discountAmount, ... }
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   useEffect(() => {
     let ignore = false;
@@ -80,7 +84,39 @@ export default function Booking() {
   const finalPerPerson = Number(pricingPreview?.finalPrice ?? basePerPerson);
   const totalBase = Number((basePerPerson * peopleCount).toFixed(2));
   const totalDiscount = Number((discountPerPerson * peopleCount).toFixed(2));
-  const estimatedTotal = Number((finalPerPerson * peopleCount).toFixed(2));
+  const couponDiscountTotal = couponResult ? Number((couponResult.discountAmount * peopleCount).toFixed(2)) : 0;
+  const estimatedTotal = Number((finalPerPerson * peopleCount - couponDiscountTotal).toFixed(2));
+
+  // Reset coupon when package changes
+  useEffect(() => {
+    setCouponResult(null);
+    setCouponError('');
+    setCouponCode('');
+  }, [packageId]);
+
+  async function handleApplyCoupon() {
+    if (!couponCode.trim() || !packageId) return;
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponResult(null);
+    try {
+      const data = await apiFetch('/api/coupons/validate', {
+        method: 'POST',
+        body: JSON.stringify({ code: couponCode.trim(), packageId }),
+      });
+      setCouponResult(data);
+    } catch (err) {
+      setCouponError(err.message || 'Invalid coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  function removeCoupon() {
+    setCouponResult(null);
+    setCouponError('');
+    setCouponCode('');
+  }
 
   async function handleCreate(event) {
     event.preventDefault();
@@ -88,9 +124,11 @@ export default function Booking() {
     setError('');
 
     try {
+      const body = { packageId, travelDate, numberOfPeople: Number(numberOfPeople) };
+      if (couponResult?.code) body.couponCode = couponResult.code;
       const data = await apiFetch('/api/bookings', {
         method: 'POST',
-        body: JSON.stringify({ packageId, travelDate, numberOfPeople: Number(numberOfPeople) })
+        body: JSON.stringify(body)
       });
 
       showToast(data.message || 'Booking created.', 'success');
@@ -168,6 +206,40 @@ export default function Booking() {
             </div>
           </div>
 
+          {/* Coupon Code */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Coupon Code</label>
+            <div className="flex gap-2">
+              <input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Enter coupon code"
+                disabled={!!couponResult}
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm uppercase outline-none ring-cyan-300 transition focus:border-cyan-500 focus:ring-2 disabled:bg-slate-50"
+              />
+              {couponResult ? (
+                <button type="button" onClick={removeCoupon}
+                  className="rounded-xl border border-red-300 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50">
+                  Remove
+                </button>
+              ) : (
+                <button type="button" onClick={handleApplyCoupon} disabled={couponLoading || !couponCode.trim() || !packageId}
+                  className="rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:opacity-50">
+                  {couponLoading ? 'Checking...' : 'Apply'}
+                </button>
+              )}
+            </div>
+            {couponError && <p className="mt-1.5 text-xs font-medium text-red-600">{couponError}</p>}
+            {couponResult && (
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <svg className="h-4 w-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                <span className="text-sm font-medium text-emerald-700">
+                  {couponResult.code} applied — ₹{couponResult.discountAmount} off per person
+                </span>
+              </div>
+            )}
+          </div>
+
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4">
               <div className="flex items-center gap-2">
@@ -229,9 +301,15 @@ export default function Booking() {
                 <span className="text-slate-600">Discount:</span>
                 <span className="font-semibold text-emerald-600">₹{totalDiscount.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">Final total:</span>
-                <span className="font-semibold text-slate-900">₹{estimatedTotal.toLocaleString()}</span>
+              {couponDiscountTotal > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Coupon ({couponResult?.code}):</span>
+                  <span className="font-semibold text-emerald-600">-₹{couponDiscountTotal.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-slate-100 pt-2">
+                <span className="text-slate-600 font-semibold">Final total:</span>
+                <span className="font-bold text-lg text-slate-900">₹{Math.max(0, estimatedTotal).toLocaleString()}</span>
               </div>
               {selectedPackage.category && (
                 <div className="flex justify-between">

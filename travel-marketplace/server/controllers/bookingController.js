@@ -1,16 +1,16 @@
 const Booking = require('../models/Booking');
 const Package = require('../models/Package');
 const Offer = require('../models/Offer');
+const Coupon = require('../models/Coupon');
+const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const { computeFinalPrice } = require('../services/pricingService');
-// Payment provider is disabled until configured. Commented out razorpay usage.
-// const razorpay = require('../utils/razorpayClient');
 const { computeCancellation } = require('../services/cancellationService');
 
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { packageId, travelDate, numberOfPeople = 1 } = req.body;
+    const { packageId, travelDate, numberOfPeople = 1, couponCode } = req.body;
     const peopleCount = Number.parseInt(numberOfPeople, 10);
 
     if (!Number.isInteger(peopleCount) || peopleCount < 1) {
@@ -40,8 +40,41 @@ exports.createBooking = async (req, res) => {
 
     const pricing = await computeFinalPrice({ basePrice: pkg.price, travelDate, availableOffers });
     const totalBasePrice = Number((Number(pkg.price || 0) * peopleCount).toFixed(2));
-    const totalDiscount = Number((Number(pricing.discountAmount || 0) * peopleCount).toFixed(2));
-    const totalFinalAmount = Number((Number(pricing.finalPrice || 0) * peopleCount).toFixed(2));
+    const totalOfferDiscount = Number((Number(pricing.discountAmount || 0) * peopleCount).toFixed(2));
+    let totalFinalAmount = Number((Number(pricing.finalPrice || 0) * peopleCount).toFixed(2));
+
+    // ── Coupon logic ──
+    let appliedCoupon = null;
+    let couponDiscountTotal = 0;
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), status: 'APPROVED', isActive: true });
+      if (coupon) {
+        const notExpired = !coupon.expiresAt || new Date(coupon.expiresAt) >= new Date();
+        const withinUsage = coupon.maxUsage === 0 || coupon.usedCount < coupon.maxUsage;
+        const sameAgency = coupon.agencyId.toString() === pkg.agencyId.toString();
+        const pkgMatch = coupon.applicablePackages.length === 0 || coupon.applicablePackages.some((id) => id.toString() === packageId);
+        const meetsMin = coupon.minOrderAmount === 0 || pkg.price >= coupon.minOrderAmount;
+
+        if (notExpired && withinUsage && sameAgency && pkgMatch && meetsMin) {
+          let perPersonDiscount = 0;
+          if (coupon.discountType === 'PERCENTAGE') {
+            perPersonDiscount = (pricing.finalPrice * coupon.discountValue) / 100;
+            if (coupon.maxDiscount > 0) perPersonDiscount = Math.min(perPersonDiscount, coupon.maxDiscount);
+          } else {
+            perPersonDiscount = coupon.discountValue;
+          }
+          perPersonDiscount = Math.min(perPersonDiscount, pricing.finalPrice);
+          couponDiscountTotal = Number((perPersonDiscount * peopleCount).toFixed(2));
+          totalFinalAmount = Number((totalFinalAmount - couponDiscountTotal).toFixed(2));
+          if (totalFinalAmount < 0) totalFinalAmount = 0;
+          appliedCoupon = coupon;
+          coupon.usedCount += 1;
+          await coupon.save();
+        }
+      }
+    }
+
+    const totalDiscount = Number((totalOfferDiscount + couponDiscountTotal).toFixed(2));
 
     const booking = await Booking.create({
       userId,
@@ -51,17 +84,32 @@ exports.createBooking = async (req, res) => {
       basePrice: totalBasePrice,
       discountApplied: totalDiscount,
       finalAmount: totalFinalAmount,
+      couponId: appliedCoupon ? appliedCoupon._id : undefined,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+      couponDiscount: couponDiscountTotal,
       amountMode: 'TOTAL',
       status: 'PENDING_PAYMENT'
     });
 
-    // NOTE: Razorpay integration is currently disabled.
-    // Return booking info and a message so frontend can proceed without payment.
+    // ── Notify agency about new booking ──
+    try {
+      await Notification.create({
+        recipientId: pkg.agencyId,
+        recipientRole: 'AGENCY',
+        type: 'BOOKING_CREATED',
+        title: 'New Booking!',
+        message: `${req.user.name || req.user.email} booked "${pkg.title}" for ${peopleCount} people — ₹${totalFinalAmount.toLocaleString()}.`,
+        referenceId: booking._id,
+        referenceModel: 'Booking',
+      });
+    } catch (_) { /* non-critical */ }
+
     res.status(201).json({
       bookingId: booking._id,
       message: 'Booking created (payments disabled in this environment).',
       finalAmount: totalFinalAmount,
-      perPersonAmount: pricing.finalPrice
+      perPersonAmount: pricing.finalPrice,
+      couponApplied: appliedCoupon ? { code: appliedCoupon.code, discount: couponDiscountTotal } : null
     });
   } catch (err) {
     console.error(err);

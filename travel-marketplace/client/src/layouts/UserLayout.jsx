@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AppLogo from '../components/AppLogo';
+import NotificationBell from '../components/NotificationBell';
 
 const linkClass = ({ isActive }) =>
   `rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 ${

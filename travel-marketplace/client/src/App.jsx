@@ -28,12 +28,14 @@ import PlanTrip from './pages/PlanTrip';
 
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPayouts from './pages/AgencyPayouts';
+import AgencyCoupons from './pages/AgencyCoupons';
 
 import NotFound from './pages/NotFound';
 
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminAgencies = React.lazy(() => import('./pages/admin/AdminAgencies'));
 const AdminBookings = React.lazy(() => import('./pages/admin/AdminBookings'));
+const AdminCoupons = React.lazy(() => import('./pages/admin/AdminCoupons'));
 const AdminAnalytics = React.lazy(() => import('./pages/admin/AdminAnalytics'));
 
 export default function App() {
@@ -90,6 +92,14 @@ export default function App() {
             }
           />
           <Route
+            path="coupons"
+            element={
+              <Suspense fallback={<Loading />}>
+                <AdminCoupons />
+              </Suspense>
+            }
+          />
+          <Route
             path="analytics"
             element={
               <Suspense fallback={<Loading />}>
@@ -104,6 +114,7 @@ export default function App() {
         <Route path="/agency" element={<AgencyLayout />}>
           <Route index element={<Navigate to="/agency/dashboard" replace />} />
           <Route path="dashboard" element={<AgencyDashboard />} />
+          <Route path="coupons" element={<AgencyCoupons />} />
           <Route path="payouts" element={<AgencyPayouts />} />
         </Route>
       </Route>

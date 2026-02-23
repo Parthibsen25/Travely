@@ -15,6 +15,9 @@ const BookingSchema = new mongoose.Schema(
       enum: ['PENDING_PAYMENT','CONFIRMED','CANCELLED','COMPLETED','REFUND_INITIATED','REFUNDED','DISPUTED'],
       default: 'PENDING_PAYMENT'
     },
+    couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+    couponCode: { type: String },
+    couponDiscount: { type: Number, default: 0 },
     paymentId: { type: String },
     paymentOrderId: { type: String },
     payoutId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payout' },
