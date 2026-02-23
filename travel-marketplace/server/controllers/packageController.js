@@ -202,6 +202,30 @@ exports.getPackagesByDuration = async (req, res) => {
   }
 };
 
+// GET /api/packages/by-season?season=jan-feb-mar&limit=10
+exports.getPackagesBySeason = async (req, res) => {
+  try {
+    const { season, limit = 10 } = req.query;
+    const filter = { status: 'ACTIVE' };
+
+    if (season) {
+      filter.bestSeasons = season;
+    }
+
+    const packages = await Package.find(filter)
+      .sort({ staffPick: -1, rating: -1, reviewCount: -1 })
+      .limit(Number(limit))
+      .populate('agencyId', 'businessName verificationStatus')
+      .select('title description destination category price duration agencyId status imageUrl rating reviewCount bestSeasons staffPick createdAt')
+      .lean();
+
+    res.json({ packages });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // GET /api/packages/by-theme?theme=beach&limit=10
 exports.getPackagesByTheme = async (req, res) => {
   try {

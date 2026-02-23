@@ -18,9 +18,11 @@ const { startPayoutJob } = require('./jobs/payoutJob');
 const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const customTripRoutes = require('./routes/customTripRoutes');
+const homeRoutes = require('./routes/homeRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 4000;
 const uploadsDir = path.join(__dirname, 'uploads');
 
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -75,6 +77,8 @@ app.use('/api/payouts', payoutRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/custom-trips', customTripRoutes);
+app.use('/api/home', homeRoutes);
 
 app.use(errorHandler);
 

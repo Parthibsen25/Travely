@@ -47,8 +47,8 @@ export default function Packages() {
     return allPackages.filter((pkg) => {
       const price = pkg.price || 0;
       switch (priceRange) {
-        case '0-5000': return price < 5000;
-        case '5000-10000': return price >= 5000 && price < 10000;
+        case '0-4000': return price < 4000;
+        case '4000-10000': return price >= 4000 && price < 10000;
         case '10000-20000': return price >= 10000 && price < 20000;
         case '20000+': return price >= 20000;
         default: return true;

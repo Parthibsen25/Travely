@@ -74,7 +74,7 @@ npm install
 
 Create a `.env` file in the `server` directory:
 ```env
-PORT=5000
+PORT=4000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 CLIENT_ORIGIN=http://localhost:5173
@@ -97,7 +97,7 @@ npm run dev
 
 The application will be available at:
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
+- Backend API: http://localhost:4000
 
 ## Project Structure
 

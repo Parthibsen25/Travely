@@ -73,6 +73,36 @@ exports.getMyReviews = async (req, res) => {
   }
 };
 
+// GET /api/reviews/featured — public, returns top reviews with comments for the landing page
+exports.getFeaturedReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ rating: { $gte: 3 }, comment: { $exists: true, $ne: '' } })
+      .populate('userId', 'name')
+      .populate('packageId', 'title destination imageUrl price')
+      .sort({ rating: -1, createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    const stories = reviews.map((r) => ({
+      _id: r._id,
+      userName: r.userId?.name || 'Traveler',
+      rating: r.rating,
+      comment: r.comment,
+      images: r.images || [],
+      packageTitle: r.packageId?.title || '',
+      destination: r.packageId?.destination || '',
+      packageImage: r.packageId?.imageUrl || '',
+      packageId: r.packageId?._id || null,
+      createdAt: r.createdAt,
+    }));
+
+    res.json({ stories });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 async function updatePackageRating(packageId) {
   try {
     const reviews = await Review.find({ packageId }).lean();

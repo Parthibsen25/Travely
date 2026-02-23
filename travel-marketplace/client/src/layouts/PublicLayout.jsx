@@ -36,7 +36,7 @@ export default function PublicLayout() {
             ) : (
               <>
                 <Link to={roleHome(user.role)} className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:from-cyan-700 hover:to-blue-700">
-                  Open {user.role === 'ADMIN' ? 'Admin' : user.role === 'AGENCY' ? 'Agency' : 'App'}
+                  Open {user.role === 'ADMIN' ? 'Admin' : user.role === 'AGENCY' ? 'Agency' : 'Dashboard'}
                 </Link>
                 <button type="button" onClick={logout} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                   Logout
@@ -74,7 +74,7 @@ export default function PublicLayout() {
               ) : (
                 <>
                   <Link to={roleHome(user.role)} onClick={() => setMobileOpen(false)} className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2.5 text-center text-sm font-semibold text-white">
-                    Open {user.role === 'ADMIN' ? 'Admin' : user.role === 'AGENCY' ? 'Agency' : 'App'}
+                    Open {user.role === 'ADMIN' ? 'Admin' : user.role === 'AGENCY' ? 'Agency' : 'Dashboard'}
                   </Link>
                   <button type="button" onClick={() => { logout(); setMobileOpen(false); }} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Logout</button>
                 </>

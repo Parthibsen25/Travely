@@ -38,8 +38,8 @@ export default function FilterBar({ selectedCategory, onCategoryChange, priceRan
             className="rounded-lg border-0 bg-transparent text-sm font-semibold text-slate-700 outline-none"
           >
             <option value="all">All Prices</option>
-            <option value="0-5000">Under ₹5,000</option>
-            <option value="5000-10000">₹5,000 - ₹10,000</option>
+            <option value="0-4000">Under ₹5,000</option>
+            <option value="4000-10000">₹5,000 - ₹10,000</option>
             <option value="10000-20000">₹10,000 - ₹20,000</option>
             <option value="20000+">Above ₹20,000</option>
           </select>

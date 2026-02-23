@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
+import HappyTravelers from '../components/HappyTravelers';
 
 export default function Home() {
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -243,6 +244,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Happy Travelers Section */}
+      <HappyTravelers />
 
       {/* CTA Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-800 py-20">
