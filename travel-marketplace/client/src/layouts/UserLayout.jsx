@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import AppLogo from '../components/AppLogo';
 import NotificationBell from '../components/NotificationBell';
 
@@ -11,6 +12,7 @@ const linkClass = ({ isActive }) =>
 
 export default function UserLayout() {
   const { user, logout } = useContext(AuthContext);
+  const { cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const initials = (() => {
@@ -63,6 +65,22 @@ export default function UserLayout() {
               </svg>
             </NavLink>
             <NavLink
+              to="/app/cart"
+              className={({ isActive }) =>
+                `relative hidden sm:inline-flex items-center justify-center rounded-full p-2 transition hover:bg-blue-50 ${isActive ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'}`
+              }
+              title="My Cart"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+              {cartCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </NavLink>
+            <NavLink
               to="/app/profile"
               className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-sm font-bold text-white shadow-sm"
               title="Profile"
@@ -102,6 +120,12 @@ export default function UserLayout() {
                   {link.label}
                 </NavLink>
               ))}
+              <NavLink to="/app/wishlist" onClick={() => setMobileOpen(false)} className={linkClass}>
+                ❤️ Wishlist
+              </NavLink>
+              <NavLink to="/app/cart" onClick={() => setMobileOpen(false)} className={linkClass}>
+                🛒 Cart {cartCount > 0 && `(${cartCount})`}
+              </NavLink>
               <button type="button" onClick={() => { logout(); setMobileOpen(false); }} className="mt-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 text-left">
                 Logout
               </button>

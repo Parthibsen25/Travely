@@ -1,6 +1,8 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 import { apiFetch, mediaUrl } from '../utils/api';
 import Loading from '../components/Loading';
 
@@ -111,6 +113,43 @@ function CheckboxOption({ checked, onChange, label, icon, count }) {
       <span className="flex-1 group-hover:text-slate-900">{typeof label === 'string' ? label : label}</span>
       {count !== undefined && <span className="text-xs text-slate-400">({count})</span>}
     </label>
+  );
+}
+
+/* ─── Add to Cart Button ─────────────────────────────────────────────── */
+function AddToCartButton({ pkg }) {
+  const { addToCart, isInCart } = useCart();
+  const { showToast } = useToast();
+  const [adding, setAdding] = useState(false);
+  const inCart = isInCart(pkg._id);
+
+  const handleClick = async () => {
+    if (inCart) {
+      showToast('Already in cart', 'info');
+      return;
+    }
+    setAdding(true);
+    const result = await addToCart(pkg._id);
+    setAdding(false);
+    if (result.success) {
+      showToast(`"${pkg.title}" added to cart!`, 'success');
+    } else {
+      showToast(result.message, 'error');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={adding}
+      className={`rounded-lg px-4 py-2 text-xs font-bold transition hover:shadow-md ${
+        inCart
+          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+          : 'bg-red-500 text-white hover:bg-red-600'
+      } ${adding ? 'opacity-60 cursor-wait' : ''}`}
+    >
+      {adding ? 'Adding...' : inCart ? '✓ In Cart' : 'Add to Cart'}
+    </button>
   );
 }
 
@@ -317,12 +356,7 @@ function PackageGridCard({ pkg }) {
           >
             View Details
           </Link>
-          <Link
-            to={`/app/booking?packageId=${pkg._id}`}
-            className="rounded-lg bg-red-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-600 hover:shadow-md"
-          >
-            Book Now
-          </Link>
+          <AddToCartButton pkg={pkg} />
         </div>
       </div>
     </article>

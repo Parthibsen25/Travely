@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiFetch, mediaUrl } from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import Loading from '../components/Loading';
 import Modal from '../components/Modal';
@@ -10,6 +11,7 @@ export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useContext(AuthContext);
+  const { addToCart, isInCart } = useCart();
   const { showToast } = useToast();
   const [packageData, setPackageData] = useState(null);
   const [pricing, setPricing] = useState(null);
@@ -300,6 +302,28 @@ export default function PackageDetail() {
             >
               Book Now
             </Link>
+
+            <button
+              onClick={async () => {
+                if (isInCart(id)) {
+                  showToast('Already in cart', 'info');
+                  return;
+                }
+                const result = await addToCart(id);
+                if (result.success) {
+                  showToast('Added to cart!', 'success');
+                } else {
+                  showToast(result.message, 'error');
+                }
+              }}
+              className={`block w-full rounded-xl px-6 py-3.5 text-center text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+                isInCart(id)
+                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                  : 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+              }`}
+            >
+              {isInCart(id) ? '✓ In Cart' : 'Add to Cart'}
+            </button>
 
             <div className="mt-6 space-y-3 text-sm">
               <div className="flex justify-between">
