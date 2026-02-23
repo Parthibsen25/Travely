@@ -35,7 +35,7 @@ export default function AgencyProfile() {
     let ignore = false;
     async function loadStats() {
       try {
-        const data = await apiFetch('/api/bookings/my').catch(() => ({ bookings: [] }));
+        const data = await apiFetch('/api/bookings/agency').catch(() => ({ bookings: [] }));
         if (!ignore) setBookings(data.bookings || []);
       } finally {
         if (!ignore) setLoadingBookings(false);

@@ -136,10 +136,16 @@ exports.getBooking = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid booking id' });
     }
-    const booking = await Booking.findById(req.params.id).lean();
+    const booking = await Booking.findById(req.params.id)
+      .populate('packageId', 'title destination category duration price imageUrl agencyId')
+      .populate('userId', 'name email')
+      .lean();
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
-    // Only owner or admin can view
-    if (req.user && req.user.id !== booking.userId.toString() && req.user.role !== 'ADMIN') {
+    // Owner, admin, or agency that owns the package can view
+    const isOwner = req.user && req.user.id === booking.userId._id?.toString?.() || req.user.id === booking.userId.toString();
+    const isAdmin = req.user.role === 'ADMIN';
+    const isAgencyOwner = req.user.role === 'AGENCY' && booking.packageId?.agencyId?.toString() === req.user.id;
+    if (!isOwner && !isAdmin && !isAgencyOwner) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     res.json({ booking });
@@ -206,6 +212,27 @@ exports.confirmBooking = async (req, res) => {
     booking.confirmedAt = new Date();
     await booking.save();
     return res.json({ message: 'Booking confirmed successfully.', booking });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Agency bookings ──
+exports.getAgencyBookings = async (req, res) => {
+  try {
+    // Find all packages owned by this agency
+    const agencyId = req.user.id;
+    const packages = await Package.find({ agencyId }).select('_id').lean();
+    const packageIds = packages.map((p) => p._id);
+
+    const bookings = await Booking.find({ packageId: { $in: packageIds } })
+      .sort('-createdAt')
+      .populate('packageId', 'title destination category duration price imageUrl')
+      .populate('userId', 'name email')
+      .lean();
+
+    res.json({ bookings });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
