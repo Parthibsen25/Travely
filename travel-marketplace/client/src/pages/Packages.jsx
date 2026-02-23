@@ -64,7 +64,7 @@ export default function Packages() {
   }, [packages]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-fade-in">
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-600 via-blue-600 to-purple-600 p-8 text-white shadow-xl animate-slide-down">
         <div className="absolute inset-0 opacity-20">
           <div className="h-full w-full bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] [background-size:20px_20px]" />

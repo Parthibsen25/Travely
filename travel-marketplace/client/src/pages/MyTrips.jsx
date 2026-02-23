@@ -61,7 +61,7 @@ export default function MyTrips() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-fade-in">
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-8 text-white shadow-xl animate-slide-down">
         <div className="absolute -right-12 -top-12 h-64 w-64 animate-float rounded-full bg-white/10 blur-3xl" />
         <div className="relative">

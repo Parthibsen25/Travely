@@ -318,7 +318,9 @@ export default function UserDashboard() {
   const firstName = user?.name?.split(' ')[0] || 'Traveler';
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="animate-fade-in">
+      {/* Constrained content */}
+      <div className="mx-auto w-full max-w-7xl space-y-8 px-4 pt-8 pb-4 sm:px-6">
       {/* Greeting */}
       <div>
         <h1 className="font-display text-2xl font-bold text-slate-900">
@@ -371,6 +373,7 @@ export default function UserDashboard() {
           </div>
         </section>
       )}
+      </div>
 
       {/* ── Best priced packages by Duration ── */}
       <DurationFilter />

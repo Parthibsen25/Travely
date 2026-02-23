@@ -106,11 +106,13 @@ export default function PackageDetail() {
   if (loading) return <Loading />;
   if (error) {
     return (
-      <div className="rounded-xl bg-red-50 border border-red-200 p-6">
-        <p className="font-medium text-red-700">{error}</p>
-        <Link to="/app/packages" className="mt-4 inline-block text-sm text-red-600 underline">
-          Back to Packages
-        </Link>
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+        <div className="rounded-xl bg-red-50 border border-red-200 p-6">
+          <p className="font-medium text-red-700">{error}</p>
+          <Link to="/app/packages" className="mt-4 inline-block text-sm text-red-600 underline">
+            Back to Packages
+          </Link>
+        </div>
       </div>
     );
   }
@@ -118,7 +120,7 @@ export default function PackageDetail() {
   if (!packageData) return null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-fade-in">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <div className="relative h-64 overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 animate-scale-in">

@@ -179,7 +179,7 @@ export default function Booking() {
   const minDate = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px] animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl grid grid-cols-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_400px] animate-fade-in">
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 animate-slide-in-left">
         <div className="mb-6">
           <h1 className="font-display text-3xl font-bold text-slate-900">Create a Booking</h1>

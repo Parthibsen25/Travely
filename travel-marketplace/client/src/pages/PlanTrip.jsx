@@ -224,7 +224,7 @@ export default function PlanTrip() {
   if (loading) return <Loading />;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

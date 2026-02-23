@@ -33,7 +33,7 @@ export default function UserLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm animate-slide-down">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <AppLogo to="/" />
@@ -99,7 +99,7 @@ export default function UserLayout() {
         )}
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+      <main className="flex-1">
         <Outlet />
       </main>
     </div>

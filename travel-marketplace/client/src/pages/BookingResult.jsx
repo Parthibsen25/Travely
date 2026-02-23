@@ -59,7 +59,7 @@ export default function BookingResult() {
   const discountAmount = useMemo(() => getBookingAmount(booking, booking?.discountApplied), [booking]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 animate-scale-in">
+    <div className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 my-8 animate-scale-in">
       <h1 className="font-display text-3xl font-bold text-slate-900">Booking Status</h1>
       <p className="mt-2 text-sm text-slate-600">Live updates every 3 seconds.</p>
 
