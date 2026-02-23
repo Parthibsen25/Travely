@@ -4,6 +4,8 @@ const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 const coupon = require('../controllers/couponController');
 
+// User: browse available coupons for a package
+router.get('/available', protect, authorizeRoles('USER', 'ADMIN'), coupon.getAvailableCoupons);
 // User: validate a coupon code
 router.post('/validate', protect, authorizeRoles('USER', 'ADMIN'), coupon.validateCoupon);
 

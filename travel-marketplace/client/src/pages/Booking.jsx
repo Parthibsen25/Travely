@@ -21,6 +21,9 @@ export default function Booking() {
   const [couponResult, setCouponResult] = useState(null); // { valid, code, discountAmount, ... }
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [couponsOpen, setCouponsOpen] = useState(false);
+  const [couponsLoading, setCouponsLoading] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -92,7 +95,40 @@ export default function Booking() {
     setCouponResult(null);
     setCouponError('');
     setCouponCode('');
+    setAvailableCoupons([]);
+    setCouponsOpen(false);
   }, [packageId]);
+
+  async function fetchAvailableCoupons() {
+    if (!packageId) return;
+    setCouponsLoading(true);
+    try {
+      const data = await apiFetch(`/api/coupons/available?packageId=${packageId}`);
+      setAvailableCoupons(data.coupons || []);
+      setCouponsOpen(true);
+    } catch {
+      setAvailableCoupons([]);
+      setCouponsOpen(true);
+    } finally {
+      setCouponsLoading(false);
+    }
+  }
+
+  function selectCoupon(code) {
+    setCouponCode(code);
+    setCouponsOpen(false);
+    // Auto-apply
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponResult(null);
+    apiFetch('/api/coupons/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code, packageId }),
+    })
+      .then((data) => setCouponResult(data))
+      .catch((err) => setCouponError(err.message || 'Invalid coupon'))
+      .finally(() => setCouponLoading(false));
+  }
 
   async function handleApplyCoupon() {
     if (!couponCode.trim() || !packageId) return;
@@ -236,6 +272,91 @@ export default function Booking() {
                 <span className="text-sm font-medium text-emerald-700">
                   {couponResult.code} applied — ₹{couponResult.discountAmount} off per person
                 </span>
+              </div>
+            )}
+
+            {/* View Available Coupons */}
+            {!couponResult && packageId && (
+              <button
+                type="button"
+                onClick={fetchAvailableCoupons}
+                disabled={couponsLoading}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-600 transition hover:text-cyan-700 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                {couponsLoading ? 'Loading coupons...' : couponsOpen ? 'Hide available coupons' : 'View available coupons'}
+              </button>
+            )}
+
+            {couponsOpen && !couponResult && (
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
+                <div className="border-b border-slate-200 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Available Coupons
+                      <span className="ml-1.5 rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-700">
+                        {availableCoupons.length}
+                      </span>
+                    </h3>
+                    <button type="button" onClick={() => setCouponsOpen(false)} className="text-slate-400 hover:text-slate-600">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                {availableCoupons.length === 0 ? (
+                  <div className="px-4 py-6 text-center">
+                    <svg className="mx-auto h-8 w-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <p className="mt-2 text-sm text-slate-500">No coupons available for this package right now.</p>
+                  </div>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-200">
+                    {availableCoupons.map((c) => (
+                      <div key={c.code} className="group flex items-center justify-between px-4 py-3 transition hover:bg-white">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-md border border-dashed border-cyan-400 bg-cyan-50 px-2.5 py-1 font-mono text-sm font-bold tracking-wider text-cyan-700">
+                              {c.code}
+                            </span>
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                              {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}
+                            </span>
+                          </div>
+                          {c.description && (
+                            <p className="mt-1 text-xs text-slate-500 line-clamp-1">{c.description}</p>
+                          )}
+                          <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-slate-400">
+                            {c.minOrderAmount > 0 && (
+                              <span>Min order: ₹{c.minOrderAmount.toLocaleString()}</span>
+                            )}
+                            {c.maxDiscount > 0 && c.discountType === 'PERCENTAGE' && (
+                              <span>Max discount: ₹{c.maxDiscount.toLocaleString()}</span>
+                            )}
+                            {c.expiresAt && (
+                              <span>Expires: {new Date(c.expiresAt).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-3 flex flex-col items-end gap-1">
+                          <span className="text-xs font-semibold text-emerald-600">
+                            Save ₹{c.estimatedDiscount.toLocaleString()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => selectCoupon(c.code)}
+                            className="rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-cyan-700 active:scale-95"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -258,6 +258,31 @@ exports.getPackagesByTheme = async (req, res) => {
   }
 };
 
+// GET /api/packages/by-budget?min=0&max=10000&limit=10
+exports.getPackagesByBudget = async (req, res) => {
+  try {
+    const { min = 0, max, limit = 10 } = req.query;
+    const filter = { status: 'ACTIVE' };
+
+    filter.price = { $gte: Number(min) };
+    if (max) filter.price.$lte = Number(max);
+
+    const packages = await Package.find(filter)
+      .sort({ rating: -1, price: 1 })
+      .limit(Number(limit))
+      .populate('agencyId', 'businessName verificationStatus')
+      .select('title destination category price duration agencyId imageUrl rating reviewCount offers createdAt')
+      .lean();
+
+    const total = await Package.countDocuments(filter);
+
+    res.json({ packages, total });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.getPackageById = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

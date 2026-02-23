@@ -22,6 +22,7 @@ const customTripRoutes = require('./routes/customTripRoutes');
 const homeRoutes = require('./routes/homeRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const bannerRoutes = require('./routes/bannerRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -83,6 +84,7 @@ app.use('/api/custom-trips', customTripRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/banners', bannerRoutes);
 
 app.use(errorHandler);
 

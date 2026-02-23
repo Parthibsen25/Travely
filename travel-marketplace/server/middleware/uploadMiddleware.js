@@ -3,7 +3,9 @@ const path = require('path');
 const multer = require('multer');
 
 const packageUploadDir = path.join(__dirname, '..', 'uploads', 'packages');
+const bannerUploadDir = path.join(__dirname, '..', 'uploads', 'banners');
 fs.mkdirSync(packageUploadDir, { recursive: true });
+fs.mkdirSync(bannerUploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -39,5 +41,17 @@ const uploadPackageImage = multer({
 });
 
 module.exports = {
-  uploadPackageImage
+  uploadPackageImage,
+  uploadBannerImage: multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => cb(null, bannerUploadDir),
+      filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        const baseName = path.basename(file.originalname || 'banner', ext).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48) || 'banner';
+        cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${baseName}${ext}`);
+      }
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter
+  }),
 };

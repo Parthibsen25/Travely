@@ -20,8 +20,9 @@ export function mediaUrl(pathOrUrl) {
 }
 
 export async function apiFetch(path, options = {}) {
+  const isFormData = options.body instanceof FormData;
   const headers = {
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {})
   };
 

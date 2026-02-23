@@ -183,7 +183,74 @@ exports.reviewCoupon = async (req, res) => {
   }
 };
 
-// ───── User endpoint ─────
+// ───── User endpoints ─────
+
+// List available coupons for a package (user can browse before applying)
+exports.getAvailableCoupons = async (req, res) => {
+  try {
+    const { packageId } = req.query;
+    if (!packageId) {
+      return res.status(400).json({ message: 'packageId query param is required' });
+    }
+
+    const pkg = await Package.findById(packageId).lean();
+    if (!pkg) return res.status(404).json({ message: 'Package not found' });
+
+    const now = new Date();
+
+    // Find all approved, active coupons from the same agency
+    const coupons = await Coupon.find({
+      agencyId: pkg.agencyId,
+      status: 'APPROVED',
+      isActive: true,
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $gt: now } },
+      ],
+    })
+      .select('code description discountType discountValue applicablePackages maxUsage usedCount minOrderAmount maxDiscount expiresAt')
+      .lean();
+
+    // Filter: only coupons that apply to this package (general or package-specific)
+    const available = coupons.filter((c) => {
+      // Usage limit check
+      if (c.maxUsage > 0 && c.usedCount >= c.maxUsage) return false;
+      // Package applicability check
+      if (c.applicablePackages.length > 0) {
+        return c.applicablePackages.some((id) => id.toString() === packageId);
+      }
+      return true; // general coupon (applies to all agency packages)
+    });
+
+    // Compute estimated discount for each coupon
+    const result = available.map((c) => {
+      let discount = 0;
+      if (c.discountType === 'PERCENTAGE') {
+        discount = (pkg.price * c.discountValue) / 100;
+        if (c.maxDiscount > 0) discount = Math.min(discount, c.maxDiscount);
+      } else {
+        discount = c.discountValue;
+      }
+      discount = Math.min(discount, pkg.price);
+
+      return {
+        code: c.code,
+        description: c.description,
+        discountType: c.discountType,
+        discountValue: c.discountValue,
+        estimatedDiscount: Number(discount.toFixed(2)),
+        minOrderAmount: c.minOrderAmount,
+        maxDiscount: c.maxDiscount,
+        expiresAt: c.expiresAt,
+      };
+    });
+
+    res.json({ coupons: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 // Validate and compute discount for a coupon code
 exports.validateCoupon = async (req, res) => {

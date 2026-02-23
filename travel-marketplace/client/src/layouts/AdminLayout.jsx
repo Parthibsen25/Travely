@@ -39,6 +39,9 @@ export default function AdminLayout() {
             <NavLink to="/admin/analytics" className={navClass}>
               Analytics
             </NavLink>
+            <NavLink to="/admin/banners" className={navClass}>
+              Banners
+            </NavLink>
           </nav>
 
           <div className="mt-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-4 text-white">

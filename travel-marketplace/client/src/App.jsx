@@ -37,6 +37,7 @@ const AdminAgencies = React.lazy(() => import('./pages/admin/AdminAgencies'));
 const AdminBookings = React.lazy(() => import('./pages/admin/AdminBookings'));
 const AdminCoupons = React.lazy(() => import('./pages/admin/AdminCoupons'));
 const AdminAnalytics = React.lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminBanners = React.lazy(() => import('./pages/admin/AdminBanners'));
 
 export default function App() {
   return (
@@ -104,6 +105,14 @@ export default function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <AdminAnalytics />
+              </Suspense>
+            }
+          />
+          <Route
+            path="banners"
+            element={
+              <Suspense fallback={<Loading />}>
+                <AdminBanners />
               </Suspense>
             }
           />

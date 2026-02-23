@@ -5,6 +5,8 @@ import { apiFetch, mediaUrl } from '../utils/api';
 import Loading from '../components/Loading';
 import DurationFilter from '../components/DurationFilter';
 import SeasonPicks from '../components/SeasonPicks';
+import BudgetFilter from '../components/BudgetFilter';
+import PromoBanners from '../components/PromoBanners';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(amount || 0));
@@ -373,6 +375,12 @@ export default function UserDashboard() {
 
       {/* ── Season Picks ── */}
       <SeasonPicks />
+
+      {/* ── Best priced packages within your Budget ── */}
+      <BudgetFilter />
+
+      {/* ── Promotional Banners / Ads ── */}
+      <PromoBanners />
     </div>
   );
 }
