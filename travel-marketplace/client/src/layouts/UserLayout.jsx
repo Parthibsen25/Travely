@@ -14,6 +14,7 @@ export default function UserLayout() {
   const { user, logout } = useContext(AuthContext);
   const { cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = (() => {
     const name = (user?.name || '').trim();
@@ -80,20 +81,61 @@ export default function UserLayout() {
                 </span>
               )}
             </NavLink>
-            <NavLink
-              to="/app/profile"
-              className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-sm font-bold text-white shadow-sm"
-              title="Profile"
-            >
-              {initials}
-            </NavLink>
-            <button
-              type="button"
-              onClick={logout}
-              className="hidden rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
-            >
-              Logout
-            </button>
+            {/* Profile dropdown */}
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-sm font-bold text-white shadow-sm transition hover:shadow-md hover:scale-105"
+                title="Profile"
+              >
+                {initials}
+              </button>
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white py-2 shadow-lg animate-slide-down">
+                    <div className="border-b border-slate-100 px-4 py-3">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{user?.name || 'User'}</p>
+                      <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                    </div>
+                    <NavLink
+                      to="/app/profile"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                    >
+                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                      My Profile
+                    </NavLink>
+                    <NavLink
+                      to="/app/wishlist"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                    >
+                      <svg className="h-4 w-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                      My Wishlist
+                    </NavLink>
+                    <NavLink
+                      to="/app/my-trips"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                    >
+                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                      My Trips
+                    </NavLink>
+                    <div className="my-1 border-t border-slate-100" />
+                    <button
+                      type="button"
+                      onClick={() => { setProfileOpen(false); logout(); }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             {/* Mobile hamburger */}
             <button
               type="button"
@@ -126,7 +168,11 @@ export default function UserLayout() {
               <NavLink to="/app/cart" onClick={() => setMobileOpen(false)} className={linkClass}>
                 🛒 Cart {cartCount > 0 && `(${cartCount})`}
               </NavLink>
-              <button type="button" onClick={() => { logout(); setMobileOpen(false); }} className="mt-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 text-left">
+              <NavLink to="/app/profile" onClick={() => setMobileOpen(false)} className={linkClass}>
+                👤 Profile
+              </NavLink>
+              <button type="button" onClick={() => { logout(); setMobileOpen(false); }} className="mt-2 flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 text-left transition hover:bg-red-50">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 Logout
               </button>
             </div>

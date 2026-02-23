@@ -17,7 +17,7 @@ function getInitials(name, email) {
 }
 
 export default function Profile() {
-  const { user, refreshSession } = useContext(AuthContext);
+  const { user, refreshSession, logout } = useContext(AuthContext);
   const { showToast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -252,6 +252,21 @@ export default function Profile() {
             className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
           >
             Change Password
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Account</h2>
+        <p className="mt-1 text-sm text-slate-600">Sign out of your account on this device.</p>
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-100"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Logout
           </button>
         </div>
       </div>
