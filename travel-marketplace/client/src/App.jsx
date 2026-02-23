@@ -29,6 +29,8 @@ import PlanTrip from './pages/PlanTrip';
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPayouts from './pages/AgencyPayouts';
 import AgencyCoupons from './pages/AgencyCoupons';
+import AgencyRequests from './pages/AgencyRequests';
+import MyRequests from './pages/MyRequests';
 
 import NotFound from './pages/NotFound';
 
@@ -63,6 +65,7 @@ export default function App() {
           <Route path="wishlist" element={<Wishlist />} />
           <Route path="profile" element={<Profile />} />
           <Route path="plan-trip" element={<PlanTrip />} />
+          <Route path="my-requests" element={<MyRequests />} />
         </Route>
       </Route>
 
@@ -124,6 +127,7 @@ export default function App() {
           <Route index element={<Navigate to="/agency/dashboard" replace />} />
           <Route path="dashboard" element={<AgencyDashboard />} />
           <Route path="coupons" element={<AgencyCoupons />} />
+          <Route path="requests" element={<AgencyRequests />} />
           <Route path="payouts" element={<AgencyPayouts />} />
         </Route>
       </Route>

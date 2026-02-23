@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 import HappyTravelers from '../components/HappyTravelers';
+import SiteFooter from '../components/SiteFooter';
 
 export default function Home() {
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -284,27 +285,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
-                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-                </svg>
-              </div>
-              <span className="font-display text-lg font-bold text-slate-900">Travely</span>
-            </div>
-            <p className="text-sm text-slate-500">&copy; {new Date().getFullYear()} Travely. All rights reserved.</p>
-            <div className="flex gap-4 text-sm text-slate-500">
-              <span className="cursor-default hover:text-slate-700">Privacy</span>
-              <span className="cursor-default hover:text-slate-700">Terms</span>
-              <span className="cursor-default hover:text-slate-700">Contact</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Site Footer */}
+      <SiteFooter />
     </div>
   );
 }

@@ -7,6 +7,8 @@ import DurationFilter from '../components/DurationFilter';
 import SeasonPicks from '../components/SeasonPicks';
 import BudgetFilter from '../components/BudgetFilter';
 import PromoBanners from '../components/PromoBanners';
+import CustomPackageRequest from '../components/CustomPackageRequest';
+import SiteFooter from '../components/SiteFooter';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(amount || 0));
@@ -379,8 +381,14 @@ export default function UserDashboard() {
       {/* ── Best priced packages within your Budget ── */}
       <BudgetFilter />
 
+      {/* ── Custom Package Request (like TravelTriangle) ── */}
+      <CustomPackageRequest />
+
       {/* ── Promotional Banners / Ads ── */}
       <PromoBanners />
+
+      {/* ── Site Footer ── */}
+      <SiteFooter />
     </div>
   );
 }

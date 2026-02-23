@@ -23,6 +23,7 @@ const homeRoutes = require('./routes/homeRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
+const packageRequestRoutes = require('./routes/packageRequestRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -85,6 +86,7 @@ app.use('/api/home', homeRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/package-requests', packageRequestRoutes);
 
 app.use(errorHandler);
 
