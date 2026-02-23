@@ -17,6 +17,11 @@ export default function AgencyDashboard() {
   const [offers, setOffers] = useState([{ title: '', discountPercent: 0 }]);
   const [bestSeasons, setBestSeasons] = useState([]);
   const [themes, setThemes] = useState([]);
+  const [destinationType, setDestinationType] = useState('domestic');
+  const [packageInclusions, setPackageInclusions] = useState([]);
+  const [hotelStarRating, setHotelStarRating] = useState('');
+  const [cities, setCities] = useState('');
+  const [nightCount, setNightCount] = useState('');
   const [editingPackageId, setEditingPackageId] = useState('');
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -64,6 +69,11 @@ export default function AgencyDashboard() {
     setOffers([{ title: '', discountPercent: 0 }]);
     setBestSeasons([]);
     setThemes([]);
+    setDestinationType('domestic');
+    setPackageInclusions([]);
+    setHotelStarRating('');
+    setCities('');
+    setNightCount('');
     setEditingPackageId('');
     setUploadError('');
   };
@@ -105,6 +115,11 @@ export default function AgencyDashboard() {
     );
     setBestSeasons(pkg.bestSeasons || []);
     setThemes(pkg.themes || []);
+    setDestinationType(pkg.destinationType || 'domestic');
+    setPackageInclusions(pkg.inclusions || []);
+    setHotelStarRating(pkg.hotelStarRating != null ? String(pkg.hotelStarRating) : '');
+    setCities((pkg.cities || []).join(', '));
+    setNightCount(pkg.nightCount != null ? String(pkg.nightCount) : '');
     setUploadError('');
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -163,7 +178,12 @@ export default function AgencyDashboard() {
         cancellationPolicy,
         offers,
         bestSeasons,
-        themes
+        themes,
+        destinationType,
+        inclusions: packageInclusions,
+        hotelStarRating: hotelStarRating ? Number(hotelStarRating) : undefined,
+        cities: cities.split(',').map(c => c.trim()).filter(Boolean),
+        nightCount: nightCount ? Number(nightCount) : undefined
       };
 
       if (editingPackageId) {
@@ -295,6 +315,77 @@ export default function AgencyDashboard() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all duration-300 focus:border-cyan-500 focus:ring-2 focus:scale-[1.02]"
                 required
               />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Nights</label>
+              <input
+                type="number"
+                value={nightCount}
+                onChange={(e) => setNightCount(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all duration-300 focus:border-cyan-500 focus:ring-2 focus:scale-[1.02]"
+                placeholder="e.g. 4"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Destination Type</label>
+              <select value={destinationType} onChange={(e) => setDestinationType(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="domestic">Domestic (India)</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Hotel Star Rating</label>
+              <select value={hotelStarRating} onChange={(e) => setHotelStarRating(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="">Not specified</option>
+                <option value="1">1 Star</option>
+                <option value="2">2 Star</option>
+                <option value="3">3 Star</option>
+                <option value="4">4 Star</option>
+                <option value="5">5 Star</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Cities (comma-separated)</label>
+              <input
+                type="text"
+                value={cities}
+                onChange={(e) => setCities(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all duration-300 focus:border-cyan-500 focus:ring-2 focus:scale-[1.02]"
+                placeholder="e.g. Goa, Mumbai, Delhi"
+              />
+            </div>
+          </div>
+
+          {/* Inclusions */}
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Inclusions</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'meals', label: 'Meals', icon: '🍽️' },
+                { value: 'cab', label: 'Cab', icon: '🚕' },
+                { value: 'shared-coach', label: 'Shared Coach', icon: '🚌' },
+                { value: 'flights', label: 'Flights', icon: '✈️' },
+                { value: 'hotel', label: 'Hotel', icon: '🏨' },
+                { value: 'sightseeing', label: 'Sightseeing', icon: '📸' },
+                { value: 'transfers', label: 'Transfers', icon: '🔄' },
+                { value: 'insurance', label: 'Insurance', icon: '🛡️' },
+              ].map((inc) => (
+                <button
+                  key={inc.value}
+                  type="button"
+                  onClick={() => {
+                    if (packageInclusions.includes(inc.value)) setPackageInclusions(packageInclusions.filter((v) => v !== inc.value));
+                    else setPackageInclusions([...packageInclusions, inc.value]);
+                  }}
+                  className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ${
+                    packageInclusions.includes(inc.value)
+                      ? 'bg-cyan-600 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <span>{inc.icon}</span> {inc.label}
+                </button>
+              ))}
             </div>
           </div>
 

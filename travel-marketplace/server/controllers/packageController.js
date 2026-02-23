@@ -33,31 +33,133 @@ exports.getStats = async (req, res) => {
 
 exports.listPackages = async (req, res) => {
   try {
-    const { destination, category, q } = req.query;
+    const {
+      destination, category, q,
+      destinationType, themes, inclusions,
+      minPrice, maxPrice,
+      minDuration, maxDuration,
+      durationRanges, budgetRanges,
+      hotelStarRating,
+      sort: sortParam,
+      page = 1, limit = 20
+    } = req.query;
     const filter = { status: 'ACTIVE' };
 
     if (destination) {
       filter.destination = { $regex: destination, $options: 'i' };
     }
     if (category) {
-      filter.category = category;
+      const cats = category.split(',').map(c => c.trim()).filter(Boolean);
+      if (cats.length === 1) filter.category = cats[0];
+      else if (cats.length > 1) filter.category = { $in: cats };
+    }
+    if (destinationType) {
+      const types = destinationType.split(',').map(t => t.trim()).filter(Boolean);
+      if (types.length === 1) filter.destinationType = types[0];
+      else if (types.length > 1) filter.destinationType = { $in: types };
+    }
+    if (themes) {
+      const themeArr = themes.split(',').map(t => t.trim()).filter(Boolean);
+      filter.themes = { $in: themeArr };
+    }
+    if (inclusions) {
+      const incArr = inclusions.split(',').map(i => i.trim()).filter(Boolean);
+      filter.inclusions = { $in: incArr };
+    }
+
+    // Duration ranges: support non-contiguous ranges e.g. "1-3,7-9,13-"
+    if (durationRanges) {
+      const rangeConditions = durationRanges.split(',').map(r => r.trim()).filter(Boolean).map(r => {
+        const [minStr, maxStr] = r.split('-');
+        const cond = {};
+        if (minStr) cond.$gte = Number(minStr);
+        if (maxStr) cond.$lte = Number(maxStr);
+        return Object.keys(cond).length > 0 ? { duration: cond } : null;
+      }).filter(Boolean);
+      if (rangeConditions.length === 1) {
+        filter.duration = rangeConditions[0].duration;
+      } else if (rangeConditions.length > 1) {
+        filter.$and = filter.$and || [];
+        filter.$and.push({ $or: rangeConditions });
+      }
+    } else if (minDuration || maxDuration) {
+      filter.duration = {};
+      if (minDuration) filter.duration.$gte = Number(minDuration);
+      if (maxDuration) filter.duration.$lte = Number(maxDuration);
+    }
+
+    // Budget ranges: support non-contiguous ranges e.g. "0-10000,40000-60000,80000-"
+    if (budgetRanges) {
+      const rangeConditions = budgetRanges.split(',').map(r => r.trim()).filter(Boolean).map(r => {
+        const [minStr, maxStr] = r.split('-');
+        const cond = {};
+        if (minStr) cond.$gte = Number(minStr);
+        if (maxStr) cond.$lte = Number(maxStr);
+        return Object.keys(cond).length > 0 ? { price: cond } : null;
+      }).filter(Boolean);
+      if (rangeConditions.length === 1) {
+        filter.price = rangeConditions[0].price;
+      } else if (rangeConditions.length > 1) {
+        filter.$and = filter.$and || [];
+        filter.$and.push({ $or: rangeConditions });
+      }
+    } else if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    if (hotelStarRating) {
+      const stars = hotelStarRating.split(',').map(Number).filter(n => n >= 1 && n <= 5);
+      if (stars.length === 1) filter.hotelStarRating = stars[0];
+      else if (stars.length > 1) filter.hotelStarRating = { $in: stars };
     }
     if (q) {
-      filter.$or = [
+      const searchConds = [
         { title: { $regex: q, $options: 'i' } },
         { description: { $regex: q, $options: 'i' } },
         { destination: { $regex: q, $options: 'i' } },
-        { category: { $regex: q, $options: 'i' } }
+        { category: { $regex: q, $options: 'i' } },
+        { 'cities': { $regex: q, $options: 'i' } },
+        { 'themes': { $regex: q, $options: 'i' } }
       ];
+      filter.$and = filter.$and || [];
+      filter.$and.push({ $or: searchConds });
     }
 
-    const packages = await Package.find(filter)
-      .sort('-createdAt')
-      .populate('agencyId', 'businessName verificationStatus')
-      .select('title description destination category price duration agencyId status imageUrl rating reviewCount createdAt')
-      .lean();
+    // Sorting
+    let sortObj = { createdAt: -1 };
+    switch (sortParam) {
+      case 'price_asc': sortObj = { price: 1 }; break;
+      case 'price_desc': sortObj = { price: -1 }; break;
+      case 'rating': sortObj = { rating: -1, reviewCount: -1 }; break;
+      case 'popularity': sortObj = { reviewCount: -1, rating: -1 }; break;
+      case 'duration_asc': sortObj = { duration: 1 }; break;
+      case 'duration_desc': sortObj = { duration: -1 }; break;
+      case 'newest': default: sortObj = { createdAt: -1 }; break;
+    }
 
-    res.json({ packages });
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.min(Math.max(1, Number(limit)), 50);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [packages, total] = await Promise.all([
+      Package.find(filter)
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limitNum)
+        .populate('agencyId', 'businessName verificationStatus')
+        .select('title description destination category price duration agencyId status imageUrl rating reviewCount offers themes inclusions hotelStarRating cities nightCount customizable destinationType createdAt')
+        .lean(),
+      Package.countDocuments(filter)
+    ]);
+
+    res.json({
+      packages,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum)
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -92,7 +194,8 @@ exports.getStats = async (req, res) => {
 const ALLOWED_PACKAGE_FIELDS = [
   'title', 'description', 'destination', 'category', 'price', 'duration',
   'itinerary', 'cancellationPolicy', 'offers', 'imageUrl',
-  'staffPick', 'bestSeasons', 'themes'
+  'staffPick', 'bestSeasons', 'themes', 'destinationType', 'inclusions',
+  'hotelStarRating', 'cities', 'nightCount', 'customizable'
 ];
 
 function pickFields(body) {
@@ -107,8 +210,8 @@ exports.createPackage = async (req, res) => {
   try {
     const agencyId = req.user.id;
     // Whitelist allowed fields to prevent mass-assignment
-    const { title, description, destination, category, price, duration, itinerary, cancellationPolicy, offers, imageUrl, bestSeasons, themes } = req.body;
-    const payload = { title, description, destination, category, price, duration, itinerary, cancellationPolicy, offers, imageUrl, bestSeasons, themes, agencyId };
+    const { title, description, destination, category, price, duration, itinerary, cancellationPolicy, offers, imageUrl, bestSeasons, themes, destinationType, inclusions, hotelStarRating, cities, nightCount, customizable } = req.body;
+    const payload = { title, description, destination, category, price, duration, itinerary, cancellationPolicy, offers, imageUrl, bestSeasons, themes, destinationType, inclusions, hotelStarRating, cities, nightCount, customizable, agencyId };
     const pkg = await Package.create(payload);
     res.status(201).json({ package: pkg });
   } catch (err) {
@@ -151,7 +254,7 @@ exports.updatePackage = async (req, res) => {
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
     if (pkg.agencyId.toString() !== agencyId) return res.status(403).json({ message: 'Forbidden' });
     // Whitelist allowed fields
-    const allowed = ['title', 'description', 'destination', 'category', 'price', 'duration', 'itinerary', 'cancellationPolicy', 'offers', 'imageUrl', 'bestSeasons', 'themes', 'status'];
+    const allowed = ['title', 'description', 'destination', 'category', 'price', 'duration', 'itinerary', 'cancellationPolicy', 'offers', 'imageUrl', 'bestSeasons', 'themes', 'status', 'destinationType', 'inclusions', 'hotelStarRating', 'cities', 'nightCount', 'customizable'];
     for (const key of allowed) {
       if (req.body[key] !== undefined) pkg[key] = req.body[key];
     }

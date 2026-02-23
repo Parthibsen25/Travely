@@ -52,6 +52,17 @@ export default function UserLayout() {
 
           <div className="flex items-center gap-3">
             <NavLink
+              to="/app/wishlist"
+              className={({ isActive }) =>
+                `relative hidden sm:inline-flex items-center justify-center rounded-full p-2 transition hover:bg-red-50 ${isActive ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`
+              }
+              title="My Wishlist"
+            >
+              <svg className="h-5 w-5" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </NavLink>
+            <NavLink
               to="/app/profile"
               className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-sm font-bold text-white shadow-sm"
               title="Profile"

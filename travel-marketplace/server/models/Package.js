@@ -34,7 +34,13 @@ const PackageSchema = new mongoose.Schema(
     reviewCount: { type: Number, default: 0 },
     staffPick: { type: Boolean, default: false },
     bestSeasons: [{ type: String, enum: ['jan-feb-mar', 'apr-may-jun', 'jul-aug-sep', 'oct-nov-dec'] }],
-    themes: [{ type: String, enum: ['beach', 'hill-station', 'wildlife', 'heritage', 'pilgrimage', 'honeymoon', 'family', 'adventure', 'luxury', 'backpacking'] }]
+    themes: [{ type: String, enum: ['beach', 'hill-station', 'wildlife', 'heritage', 'pilgrimage', 'honeymoon', 'family', 'adventure', 'luxury', 'backpacking'] }],
+    destinationType: { type: String, enum: ['domestic', 'international'], default: 'domestic' },
+    inclusions: [{ type: String, enum: ['meals', 'cab', 'shared-coach', 'flights', 'hotel', 'sightseeing', 'transfers', 'insurance'] }],
+    hotelStarRating: { type: Number, min: 1, max: 5 },
+    cities: [{ type: String }],
+    nightCount: { type: Number },
+    customizable: { type: Boolean, default: true }
   },
   { timestamps: true }
 );
