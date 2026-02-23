@@ -104,6 +104,87 @@ exports.deletePackage = async (req, res) => {
   }
 };
 
+// GET /api/packages/by-duration?minDays=4&maxDays=6&limit=10
+exports.getPackagesByDuration = async (req, res) => {
+  try {
+    const { minDays, maxDays, limit = 10 } = req.query;
+    const filter = { status: 'ACTIVE' };
+
+    if (minDays) filter.duration = { ...filter.duration, $gte: Number(minDays) };
+    if (maxDays) filter.duration = { ...filter.duration, $lte: Number(maxDays) };
+
+    const packages = await Package.find(filter)
+      .sort({ price: 1 }) // best priced first
+      .limit(Number(limit))
+      .populate('agencyId', 'businessName verificationStatus')
+      .select('title description destination category price duration agencyId status imageUrl rating reviewCount createdAt')
+      .lean();
+
+    const total = await Package.countDocuments(filter);
+
+    res.json({ packages, total });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/packages/by-season?season=jul-aug-sep&limit=10
+exports.getPackagesBySeason = async (req, res) => {
+  try {
+    const { season, limit = 10 } = req.query;
+    const filter = { status: 'ACTIVE', staffPick: true };
+
+    if (season) {
+      filter.bestSeasons = season;
+    }
+
+    const packages = await Package.find(filter)
+      .sort({ rating: -1, reviewCount: -1 })
+      .limit(Number(limit))
+      .populate('agencyId', 'businessName verificationStatus')
+      .select('title description destination category price duration agencyId status imageUrl rating reviewCount staffPick bestSeasons themes createdAt')
+      .lean();
+
+    res.json({ packages });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/packages/by-theme?theme=beach&limit=10
+exports.getPackagesByTheme = async (req, res) => {
+  try {
+    const { theme, limit = 10 } = req.query;
+    const filter = { status: 'ACTIVE' };
+
+    if (theme) {
+      filter.themes = theme;
+    }
+
+    const packages = await Package.find(filter)
+      .sort({ rating: -1, reviewCount: -1 })
+      .limit(Number(limit))
+      .populate('agencyId', 'businessName verificationStatus')
+      .select('title description destination category price duration agencyId status imageUrl rating reviewCount themes createdAt')
+      .lean();
+
+    // Also return available themes with counts
+    const themeCounts = await Package.aggregate([
+      { $match: { status: 'ACTIVE' } },
+      { $unwind: '$themes' },
+      { $group: { _id: '$themes', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({ packages, themes: themeCounts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.getPackageById = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

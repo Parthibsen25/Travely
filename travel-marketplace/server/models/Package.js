@@ -31,7 +31,10 @@ const PackageSchema = new mongoose.Schema(
     status: { type: String, enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' },
     imageUrl: { type: String },
     rating: { type: Number, default: 0, min: 0, max: 5 },
-    reviewCount: { type: Number, default: 0 }
+    reviewCount: { type: Number, default: 0 },
+    staffPick: { type: Boolean, default: false },
+    bestSeasons: [{ type: String, enum: ['jan-feb-mar', 'apr-may-jun', 'jul-aug-sep', 'oct-nov-dec'] }],
+    themes: [{ type: String, enum: ['beach', 'hill-station', 'wildlife', 'heritage', 'pilgrimage', 'honeymoon', 'family', 'adventure', 'luxury', 'backpacking'] }]
   },
   { timestamps: true }
 );

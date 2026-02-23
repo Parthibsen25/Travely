@@ -10,11 +10,17 @@ const {
   updatePackage,
   deletePackage,
   getPackageById,
-  listPackages
+  listPackages,
+  getPackagesByDuration,
+  getPackagesBySeason,
+  getPackagesByTheme
 } = require('../controllers/packageController');
 
 // Public routes
 router.get('/', listPackages);
+router.get('/by-duration', getPackagesByDuration);
+router.get('/by-season', getPackagesBySeason);
+router.get('/by-theme', getPackagesByTheme);
 
 // Agency-only routes
 router.get('/my', protect, authorizeRoles('AGENCY'), getMyPackages);
