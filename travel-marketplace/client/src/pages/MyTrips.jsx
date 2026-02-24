@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiFetch } from '../utils/api';
+import { apiFetch, mediaUrl } from '../utils/api';
 import { useToast } from '../context/ToastContext';
+import Modal from '../components/Modal';
 
 const statusClass = {
   PENDING_PAYMENT: 'bg-amber-100 text-amber-700',
@@ -23,6 +24,11 @@ export default function MyTrips() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewedBookings, setReviewedBookings] = useState(new Set());
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -30,6 +36,11 @@ export default function MyTrips() {
     try {
       const data = await apiFetch('/api/bookings/my');
       setBookings(data.bookings || []);
+      
+      // Load reviews to check which bookings have been reviewed
+      const reviews = await apiFetch('/api/reviews/my');
+      const reviewedPackageIds = new Set(reviews.reviews?.map(r => r.packageId?._id) || []);
+      setReviewedBookings(reviewedPackageIds);
     } catch (err) {
       setError(err.message || 'Failed to load trips');
     } finally {
@@ -58,6 +69,42 @@ export default function MyTrips() {
     } finally {
       setBusyId('');
     }
+  }
+
+  async function submitReview() {
+    if (!selectedBooking) return;
+    
+    setBusyId(selectedBooking._id);
+    try {
+      await apiFetch('/api/reviews', {
+        method: 'POST',
+        body: JSON.stringify({
+          packageId: selectedBooking.packageId._id,
+          bookingId: selectedBooking._id,
+          rating: reviewRating,
+          comment: reviewComment
+        })
+      });
+      showToast('Review submitted successfully!', 'success');
+      setShowReviewModal(false);
+      setReviewComment('');
+      setReviewRating(5);
+      setSelectedBooking(null);
+      const newReviewedSet = new Set(reviewedBookings);
+      newReviewedSet.add(selectedBooking.packageId._id);
+      setReviewedBookings(newReviewedSet);
+    } catch (err) {
+      showToast(err.message || 'Failed to submit review', 'error');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  function openReviewModal(booking) {
+    setSelectedBooking(booking);
+    setReviewRating(5);
+    setReviewComment('');
+    setShowReviewModal(true);
   }
 
   return (
@@ -92,7 +139,14 @@ export default function MyTrips() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {bookings.map((booking, index) => (
             <article key={booking._id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="relative h-32 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600">
+              <div className="relative h-32 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 overflow-hidden">
+                {booking.packageId?.imageUrl ? (
+                  <img 
+                    src={mediaUrl(booking.packageId.imageUrl)} 
+                    alt={booking.packageId?.title || 'Travel Package'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
                 <div className="absolute top-3 right-3">
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusClass[booking.status] || 'bg-slate-100 text-slate-700'}`}>
                     {booking.status.replace('_', ' ')}
@@ -170,6 +224,23 @@ export default function MyTrips() {
                     </button>
                   )}
 
+                  {(booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') && !reviewedBookings.has(booking.packageId._id) && (
+                    <button
+                      type="button"
+                      disabled={busyId === booking._id}
+                      onClick={() => openReviewModal(booking)}
+                      className="flex-1 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Write Review
+                    </button>
+                  )}
+
+                  {reviewedBookings.has(booking.packageId._id) && (
+                    <div className="flex-1 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 text-center">
+                      ✓ Reviewed
+                    </div>
+                  )}
+
                   {booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && (
                     <button
                       type="button"
@@ -186,6 +257,55 @@ export default function MyTrips() {
           ))}
         </div>
       )}
+
+      <Modal isOpen={showReviewModal} onClose={() => setShowReviewModal(false)} title="Write a Review">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Rating</label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => setReviewRating(rating)}
+                  className={`rounded-lg p-2 ${
+                    rating <= reviewRating ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Comment</label>
+            <textarea
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              rows={4}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-cyan-300 focus:ring-2"
+              placeholder="Share your experience..."
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={submitReview}
+              disabled={busyId === selectedBooking?._id}
+              className="flex-1 rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-slate-800 hover:to-slate-600 hover:scale-105 disabled:opacity-50"
+            >
+              {busyId === selectedBooking?._id ? 'Submitting...' : 'Submit Review'}
+            </button>
+            <button
+              onClick={() => setShowReviewModal(false)}
+              className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

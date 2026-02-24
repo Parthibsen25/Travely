@@ -1,5 +1,6 @@
 const Review = require('../models/Review');
 const Package = require('../models/Package');
+const Booking = require('../models/Booking');
 const mongoose = require('mongoose');
 
 exports.createReview = async (req, res) => {
@@ -14,6 +15,19 @@ exports.createReview = async (req, res) => {
     const pkg = await Package.findById(packageId);
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
 
+    // Check if user has a confirmed or completed booking for this package
+    const confirmedBooking = await Booking.findOne({
+      userId,
+      packageId,
+      status: { $in: ['CONFIRMED', 'COMPLETED'] }
+    });
+
+    if (!confirmedBooking) {
+      return res.status(403).json({ 
+        message: 'You can only review packages after confirming a booking' 
+      });
+    }
+
     // Check if user already reviewed this package
     const existing = await Review.findOne({ packageId, userId });
     if (existing) {
@@ -23,7 +37,7 @@ exports.createReview = async (req, res) => {
     const review = await Review.create({
       packageId,
       userId,
-      bookingId,
+      bookingId: bookingId || confirmedBooking._id,
       rating: Number(rating),
       comment: comment || '',
       images: images || []
@@ -47,7 +61,7 @@ exports.getPackageReviews = async (req, res) => {
     }
 
     const reviews = await Review.find({ packageId })
-      .populate('userId', 'name email')
+      .populate('userId', 'name email _id')
       .sort('-createdAt')
       .lean();
 

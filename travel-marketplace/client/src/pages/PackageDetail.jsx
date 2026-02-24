@@ -10,7 +10,7 @@ import Modal from '../components/Modal';
 export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
   const { addToCart, isInCart } = useCart();
   const { showToast } = useToast();
   const [packageData, setPackageData] = useState(null);
@@ -22,12 +22,15 @@ export default function PackageDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [userHasReviewed, setUserHasReviewed] = useState(false);
 
   useEffect(() => {
     loadPackage();
     loadReviews();
     if (isAuthenticated) {
       checkWishlist();
+      checkConfirmedBooking();
     }
   }, [id, isAuthenticated]);
 
@@ -49,6 +52,12 @@ export default function PackageDetail() {
     try {
       const data = await apiFetch(`/api/reviews/package/${id}`);
       setReviews(data.reviews || []);
+      
+      // Check if user has already reviewed this package
+      if (user?.id) {
+        const userReview = data.reviews?.find(r => r.userId?._id === user.id);
+        setUserHasReviewed(!!userReview);
+      }
     } catch (err) {
       console.error('Failed to load reviews:', err);
     }
@@ -60,6 +69,21 @@ export default function PackageDetail() {
       setIsWishlisted(data.wishlist?.includes(id) || false);
     } catch (err) {
       console.error('Failed to check wishlist:', err);
+    }
+  }
+
+  async function checkConfirmedBooking() {
+    try {
+      const data = await apiFetch(`/api/bookings/my`);
+      const bookings = data.bookings || [];
+      const confirmedBookings = bookings.filter(
+        (b) => b.packageId._id === id && (b.status === 'CONFIRMED' || b.status === 'COMPLETED')
+      );
+      if (confirmedBookings.length > 0) {
+        setConfirmedBooking(confirmedBookings[0]);
+      }
+    } catch (err) {
+      console.error('Failed to check booking:', err);
     }
   }
 
@@ -91,6 +115,7 @@ export default function PackageDetail() {
         method: 'POST',
         body: JSON.stringify({
           packageId: id,
+          bookingId: confirmedBooking?._id,
           rating: reviewRating,
           comment: reviewComment
         })
@@ -98,8 +123,10 @@ export default function PackageDetail() {
       setShowReviewModal(false);
       setReviewComment('');
       setReviewRating(5);
+      setUserHasReviewed(true);
       await loadReviews();
       await loadPackage();
+      showToast('Review submitted successfully!', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to submit review', 'error');
     }
@@ -237,12 +264,24 @@ export default function PackageDetail() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-xl font-bold text-slate-900">Reviews</h2>
               {isAuthenticated && (
-                <button
-                  onClick={() => setShowReviewModal(true)}
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Write Review
-                </button>
+                <>
+                  {confirmedBooking && !userHasReviewed ? (
+                    <button
+                      onClick={() => setShowReviewModal(true)}
+                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+                    >
+                      Write Review
+                    </button>
+                  ) : !confirmedBooking ? (
+                    <div className="text-xs text-slate-500 italic">
+                      Book this package to leave a review
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-500 italic">
+                      ✓ You've already reviewed this package
+                    </div>
+                  )}
+                </>
               )}
             </div>
             {reviews.length === 0 ? (

@@ -122,7 +122,7 @@ exports.getMyBookings = async (req, res) => {
     const filter = req.user.role === 'ADMIN' ? {} : { userId: req.user.id };
     const bookings = await Booking.find(filter)
       .sort('-createdAt')
-      .populate('packageId', 'title destination category duration')
+      .populate('packageId', 'title destination category duration price imageUrl')
       .lean();
     res.json({ bookings });
   } catch (err) {
