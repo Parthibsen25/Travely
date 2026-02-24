@@ -1,13 +1,35 @@
 const mongoose = require('mongoose');
 
+const BUDGET_CATEGORIES = ['Transport', 'Accommodation', 'Food', 'Activities', 'Shopping', 'Insurance', 'Visa', 'Other'];
+
 const BudgetItemSchema = new mongoose.Schema({
   category: {
     type: String,
-    enum: ['Transport', 'Accommodation', 'Food', 'Activities', 'Shopping', 'Insurance', 'Visa', 'Other'],
+    enum: BUDGET_CATEGORIES,
     required: true
   },
   description: { type: String, required: true },
-  amount: { type: Number, required: true, min: 0 }
+  amount: { type: Number, required: true, min: 0 },
+  // Actual spending vs planned amount
+  actualAmount: { type: Number, default: 0, min: 0 },
+  isPaid: { type: Boolean, default: false }
+});
+
+const DailyExpenseSchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  category: { type: String, enum: BUDGET_CATEGORIES, required: true },
+  description: { type: String, required: true },
+  amount: { type: Number, required: true, min: 0 },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'card', 'upi', 'other'],
+    default: 'cash'
+  }
+}, { timestamps: true });
+
+const ChecklistItemSchema = new mongoose.Schema({
+  text: { type: String, required: true },
+  checked: { type: Boolean, default: false }
 });
 
 const CustomTripSchema = new mongoose.Schema(
@@ -20,6 +42,12 @@ const CustomTripSchema = new mongoose.Schema(
     travelers: { type: Number, default: 1, min: 1 },
     budgetItems: [BudgetItemSchema],
     totalBudget: { type: Number, default: 0, min: 0 },
+    totalActual: { type: Number, default: 0, min: 0 },
+    dailyExpenses: [DailyExpenseSchema],
+    checklist: [ChecklistItemSchema],
+    budgetLimit: { type: Number, default: 0, min: 0 },
+    currency: { type: String, default: 'INR', maxlength: 3 },
+    tags: [{ type: String, trim: true }],
     notes: { type: String, default: '' },
     status: {
       type: String,
@@ -30,10 +58,18 @@ const CustomTripSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-calculate totalBudget before saving
+// Auto-calculate totals before saving
 CustomTripSchema.pre('save', function (next) {
   if (this.budgetItems && this.budgetItems.length > 0) {
     this.totalBudget = this.budgetItems.reduce((sum, item) => sum + item.amount, 0);
+    this.totalActual = this.budgetItems.reduce((sum, item) => sum + (item.actualAmount || 0), 0);
+  } else {
+    this.totalBudget = 0;
+    this.totalActual = 0;
+  }
+  // Add daily expenses to totalActual
+  if (this.dailyExpenses && this.dailyExpenses.length > 0) {
+    this.totalActual += this.dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   }
   next();
 });

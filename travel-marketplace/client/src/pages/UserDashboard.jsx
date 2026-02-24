@@ -149,12 +149,15 @@ function PackageCarousel({ packages }) {
 function BudgetMyPlan({ latestTrip }) {
   const navigate = useNavigate();
 
-  // Show latest trip summary if exists
   const hasTrip = !!latestTrip;
   const totalBudget = latestTrip?.totalBudget || 0;
-  const spent = (latestTrip?.budgetItems || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const remaining = totalBudget - spent;
-  const spentPercent = totalBudget > 0 ? Math.min(Math.round((spent / totalBudget) * 100), 100) : 0;
+  const totalActual = latestTrip?.totalActual || 0;
+  const dailyExpCount = (latestTrip?.dailyExpenses || []).length;
+  const checklist = latestTrip?.checklist || [];
+  const checkDone = checklist.filter((c) => c.checked).length;
+  const remaining = totalBudget - totalActual;
+  const spentPercent = totalBudget > 0 ? Math.min(Math.round((totalActual / totalBudget) * 100), 100) : 0;
+  const isOver = totalActual > totalBudget && totalBudget > 0;
 
   return (
     <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white shadow-card">
@@ -168,7 +171,7 @@ function BudgetMyPlan({ latestTrip }) {
           </span>
           <div>
             <h2 className="font-display text-lg font-bold text-slate-900">Budget My Plan</h2>
-            <p className="text-xs text-slate-500">Track & manage your travel budget</p>
+            <p className="text-xs text-slate-500">Track, budget & manage travel expenses</p>
           </div>
         </div>
       </div>
@@ -180,11 +183,12 @@ function BudgetMyPlan({ latestTrip }) {
             {/* Active trip overview */}
             <div className="rounded-xl bg-gradient-to-r from-slate-50 to-cyan-50 p-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-700">{latestTrip.title}</p>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                <p className="text-sm font-semibold text-slate-700 truncate">{latestTrip.title}</p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                   latestTrip.status === 'PLANNING' ? 'bg-blue-100 text-blue-700' :
                   latestTrip.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' :
-                  'bg-slate-100 text-slate-600'
+                  latestTrip.status === 'COMPLETED' ? 'bg-slate-100 text-slate-600' :
+                  'bg-red-100 text-red-700'
                 }`}>
                   {latestTrip.status}
                 </span>
@@ -193,40 +197,42 @@ function BudgetMyPlan({ latestTrip }) {
               {totalBudget > 0 && (
                 <div className="mt-3">
                   <div className="flex items-end justify-between text-xs text-slate-500">
-                    <span>Spent {formatCurrency(spent)}</span>
+                    <span>Spent {formatCurrency(totalActual)}</span>
                     <span>{formatCurrency(totalBudget)}</span>
                   </div>
                   <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        spentPercent > 80 ? 'bg-rose-500' : spentPercent > 50 ? 'bg-amber-500' : 'bg-teal-500'
+                        isOver ? 'bg-rose-500' : spentPercent > 80 ? 'bg-amber-500' : 'bg-teal-500'
                       }`}
                       style={{ width: `${spentPercent}%` }}
                     />
                   </div>
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className={`mt-1.5 text-xs ${isOver ? 'font-semibold text-rose-600' : 'text-slate-500'}`}>
                     {remaining >= 0 ? `${formatCurrency(remaining)} remaining` : `${formatCurrency(Math.abs(remaining))} over budget`}
                   </p>
                 </div>
               )}
 
-              {/* Budget breakdown mini */}
-              {(latestTrip.budgetItems || []).length > 0 && (
-                <div className="mt-3 space-y-1.5">
-                  {(latestTrip.budgetItems || []).slice(0, 4).map((item, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-                        {item.category}
-                      </span>
-                      <span className="font-medium text-slate-700">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))}
-                  {(latestTrip.budgetItems || []).length > 4 && (
-                    <p className="text-[11px] text-slate-400">+{latestTrip.budgetItems.length - 4} more items</p>
-                  )}
+              {/* Quick stats row */}
+              <div className="mt-3 flex items-center gap-3 border-t border-slate-100/80 pt-3">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span>📦</span>
+                  <span>{(latestTrip.budgetItems || []).length} items</span>
                 </div>
-              )}
+                {dailyExpCount > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-cyan-600 font-medium">
+                    <span>💳</span>
+                    <span>{dailyExpCount} expense{dailyExpCount > 1 ? 's' : ''}</span>
+                  </div>
+                )}
+                {checklist.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span>✅</span>
+                    <span>{checkDone}/{checklist.length}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="mt-4 flex gap-2">
@@ -254,14 +260,15 @@ function BudgetMyPlan({ latestTrip }) {
                 </svg>
               </div>
               <h3 className="text-base font-bold text-slate-800">Plan Your Dream Trip</h3>
-              <p className="mt-1 text-xs text-slate-500">Create a trip and track your budget</p>
+              <p className="mt-1 text-xs text-slate-500">Create & track your travel budget</p>
             </div>
 
             <div className="mt-auto space-y-2 rounded-xl bg-slate-50 p-3">
               {[
-                { icon: '₹', color: 'bg-emerald-100 text-emerald-700', label: 'Track expenses by category' },
-                { icon: '📊', color: 'bg-blue-100 text-blue-700', label: 'Visual budget breakdown' },
-                { icon: '🎯', color: 'bg-amber-100 text-amber-700', label: 'Set budget limits & alerts' },
+                { icon: '💳', color: 'bg-emerald-100 text-emerald-700', label: 'Daily expense tracker' },
+                { icon: '📊', color: 'bg-blue-100 text-blue-700', label: 'Visual budget analytics' },
+                { icon: '✅', color: 'bg-purple-100 text-purple-700', label: 'Trip checklist & templates' },
+                { icon: '📤', color: 'bg-amber-100 text-amber-700', label: 'Share & export budget' },
               ].map((feat) => (
                 <div key={feat.label} className="flex items-center gap-2.5 text-xs">
                   <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md text-xs ${feat.color}`}>{feat.icon}</span>
