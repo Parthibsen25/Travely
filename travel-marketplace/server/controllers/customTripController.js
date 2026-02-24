@@ -129,7 +129,7 @@ exports.getTrip = async (req, res) => {
 // POST /api/custom-trips – create a new custom trip
 exports.createTrip = async (req, res) => {
   try {
-    const { title, destinations, startDate, endDate, travelers, budgetItems, notes } = req.body;
+    const { title, destinations, startDate, endDate, travelers, travelerNames, budgetItems, notes } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({ message: 'Trip title is required' });
@@ -142,6 +142,7 @@ exports.createTrip = async (req, res) => {
       startDate: startDate || null,
       endDate: endDate || null,
       travelers: travelers || 1,
+      travelerNames: travelerNames || [],
       budgetItems: budgetItems || [],
       notes: notes || ''
     });
@@ -169,6 +170,7 @@ exports.updateTrip = async (req, res) => {
     if (startDate !== undefined) trip.startDate = startDate;
     if (endDate !== undefined) trip.endDate = endDate;
     if (travelers !== undefined) trip.travelers = travelers;
+    if (req.body.travelerNames !== undefined) trip.travelerNames = req.body.travelerNames;
     if (budgetItems !== undefined) trip.budgetItems = budgetItems;
     if (notes !== undefined) trip.notes = notes;
     if (status !== undefined) trip.status = status;
@@ -211,7 +213,7 @@ exports.addExpense = async (req, res) => {
     const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-    const { date, category, description, amount, paymentMethod } = req.body;
+    const { date, category, description, amount, paymentMethod, paidBy } = req.body;
     if (!category || !description || !amount || amount <= 0) {
       return res.status(400).json({ message: 'Category, description and valid amount are required' });
     }
@@ -221,7 +223,8 @@ exports.addExpense = async (req, res) => {
       category,
       description: description.trim(),
       amount: Number(amount),
-      paymentMethod: paymentMethod || 'cash'
+      paymentMethod: paymentMethod || 'cash',
+      paidBy: paidBy || ''
     });
 
     await trip.save();
@@ -263,6 +266,7 @@ exports.duplicateTrip = async (req, res) => {
       title: `${original.title} (Copy)`,
       destinations: [...original.destinations],
       travelers: original.travelers,
+      travelerNames: [...(original.travelerNames || [])],
       budgetItems: original.budgetItems.map((b) => ({
         category: b.category,
         description: b.description,
@@ -317,6 +321,24 @@ exports.getTripSummary = async (req, res) => {
 
     if (trip.totalActual > 0) {
       text += `💳 Actual Spent: ${fmt(trip.totalActual)}\n`;
+    }
+
+    // Per-person expense breakdown
+    if (trip.travelerNames && trip.travelerNames.length > 0 && trip.dailyExpenses.length > 0) {
+      const personTotals = {};
+      trip.travelerNames.forEach((name) => { personTotals[name] = 0; });
+      trip.dailyExpenses.forEach((exp) => {
+        if (exp.paidBy && personTotals[exp.paidBy] !== undefined) {
+          personTotals[exp.paidBy] += exp.amount;
+        }
+      });
+      const hasAny = Object.values(personTotals).some((v) => v > 0);
+      if (hasAny) {
+        text += `\n👤 Per-Person Expenses:\n`;
+        Object.entries(personTotals).forEach(([name, total]) => {
+          text += `  • ${name}: ${fmt(total)}\n`;
+        });
+      }
     }
 
     text += `\n— Planned with Travely`;

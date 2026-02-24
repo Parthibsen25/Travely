@@ -24,7 +24,8 @@ const DailyExpenseSchema = new mongoose.Schema({
     type: String,
     enum: ['cash', 'card', 'upi', 'other'],
     default: 'cash'
-  }
+  },
+  paidBy: { type: String, trim: true, default: '' }
 }, { timestamps: true });
 
 const ChecklistItemSchema = new mongoose.Schema({
@@ -40,6 +41,7 @@ const CustomTripSchema = new mongoose.Schema(
     startDate: { type: Date },
     endDate: { type: Date },
     travelers: { type: Number, default: 1, min: 1 },
+    travelerNames: [{ type: String, trim: true }],
     budgetItems: [BudgetItemSchema],
     totalBudget: { type: Number, default: 0, min: 0 },
     totalActual: { type: Number, default: 0, min: 0 },

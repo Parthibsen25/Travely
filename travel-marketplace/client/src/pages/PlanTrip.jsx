@@ -176,7 +176,7 @@ export default function PlanTrip() {
   // Form state
   const emptyForm = {
     title: '', destinations: [''], startDate: '', endDate: '',
-    travelers: 1, budgetItems: [], notes: '', budgetLimit: 0,
+    travelers: 1, travelerNames: [], budgetItems: [], notes: '', budgetLimit: 0,
     currency: 'INR', tags: [], checklist: []
   };
   const [form, setForm] = useState({ ...emptyForm });
@@ -189,7 +189,7 @@ export default function PlanTrip() {
   // Expense form
   const [expForm, setExpForm] = useState({
     date: new Date().toISOString().slice(0, 10),
-    category: 'Food', description: '', amount: '', paymentMethod: 'upi'
+    category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: ''
   });
   const [addingExpense, setAddingExpense] = useState(false);
 
@@ -238,6 +238,7 @@ export default function PlanTrip() {
       startDate: trip.startDate ? trip.startDate.slice(0, 10) : '',
       endDate: trip.endDate ? trip.endDate.slice(0, 10) : '',
       travelers: trip.travelers,
+      travelerNames: trip.travelerNames || [],
       budgetItems: trip.budgetItems.map((b) => ({ ...b })),
       notes: trip.notes || '',
       budgetLimit: trip.budgetLimit || 0,
@@ -261,6 +262,7 @@ export default function PlanTrip() {
       ...emptyForm,
       title: template.title,
       travelers: template.travelers,
+      travelerNames: [],
       budgetItems: template.budgetItems.map((b) => ({ ...b, actualAmount: 0, isPaid: false })),
       destinations: ['']
     });
@@ -318,6 +320,7 @@ export default function PlanTrip() {
       startDate: form.startDate || null,
       endDate: form.endDate || null,
       travelers: form.travelers,
+      travelerNames: form.travelerNames.filter((n) => n.trim()),
       budgetItems: form.budgetItems,
       notes: form.notes,
       budgetLimit: form.budgetLimit || 0,
@@ -406,7 +409,8 @@ export default function PlanTrip() {
           category: expForm.category,
           description: expForm.description.trim(),
           amount: Number(expForm.amount),
-          paymentMethod: expForm.paymentMethod
+          paymentMethod: expForm.paymentMethod,
+          paidBy: expForm.paidBy
         })
       });
       setSelectedTrip(result.trip);
@@ -617,7 +621,9 @@ export default function PlanTrip() {
                 {trip.startDate && (
                   <span>📅 {formatShortDate(trip.startDate)}{trip.endDate ? ` – ${formatShortDate(trip.endDate)}` : ''}</span>
                 )}
-                <span>👥 {trip.travelers}</span>
+                <span>👥 {trip.travelers}{trip.travelerNames && trip.travelerNames.length > 0 && (
+                  <span className="ml-1 text-xs text-slate-400">({trip.travelerNames.join(', ')})</span>
+                )}</span>
               </div>
             </div>
           </div>
@@ -818,7 +824,7 @@ export default function PlanTrip() {
             {/* Add expense form */}
             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-card">
               <h3 className="font-display text-lg font-bold text-slate-900 mb-4">Log Expense</h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_140px_1fr_120px_120px_auto]">
+              <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${(trip.travelerNames && trip.travelerNames.length > 0) ? 'lg:grid-cols-[1fr_130px_1fr_100px_110px_120px_auto]' : 'lg:grid-cols-[1fr_140px_1fr_120px_120px_auto]'}`}>
                 <input
                   type="date"
                   value={expForm.date}
@@ -857,6 +863,18 @@ export default function PlanTrip() {
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
+                {trip.travelerNames && trip.travelerNames.length > 0 && (
+                  <select
+                    value={expForm.paidBy}
+                    onChange={(e) => setExpForm({ ...expForm, paidBy: e.target.value })}
+                    className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus-ring"
+                  >
+                    <option value="">Who paid?</option>
+                    {trip.travelerNames.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                )}
                 <button
                   onClick={() => handleAddExpense(trip._id)}
                   disabled={addingExpense}
@@ -893,6 +911,83 @@ export default function PlanTrip() {
               </div>
             )}
 
+            {/* Per-Person Expense Breakdown */}
+            {trip.travelerNames && trip.travelerNames.length > 0 && (trip.dailyExpenses || []).length > 0 && (() => {
+              const personData = {};
+              trip.travelerNames.forEach((name) => { personData[name] = { total: 0, count: 0, categories: {} }; });
+              let unassigned = { total: 0, count: 0 };
+              (trip.dailyExpenses || []).forEach((exp) => {
+                if (exp.paidBy && personData[exp.paidBy]) {
+                  personData[exp.paidBy].total += exp.amount;
+                  personData[exp.paidBy].count += 1;
+                  personData[exp.paidBy].categories[exp.category] = (personData[exp.paidBy].categories[exp.category] || 0) + exp.amount;
+                } else {
+                  unassigned.total += exp.amount;
+                  unassigned.count += 1;
+                }
+              });
+              const equalShare = dailyExpTotal / trip.travelerNames.length;
+
+              return (
+                <div className="rounded-2xl border border-slate-100 bg-white shadow-card overflow-hidden">
+                  <div className="border-b border-slate-50 bg-slate-50/50 px-5 py-3">
+                    <h3 className="font-display text-sm font-bold text-slate-700">👥 Per-Person Expense Breakdown</h3>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {trip.travelerNames.map((name) => {
+                        const pd = personData[name];
+                        const diff = pd.total - equalShare;
+                        const topCat = Object.entries(pd.categories).sort((a, b) => b[1] - a[1])[0];
+                        return (
+                          <div key={name} className="rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-xs font-bold text-white">
+                                  {name.charAt(0).toUpperCase()}
+                                </span>
+                                <span className="text-sm font-semibold text-slate-800">{name}</span>
+                              </div>
+                              <span className="font-display text-lg font-bold text-slate-900">{formatCurrency(pd.total, trip.currency)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-400">{pd.count} expense{pd.count !== 1 ? 's' : ''}</span>
+                              <span className={`rounded-full px-2 py-0.5 font-semibold ${
+                                diff > 0 ? 'bg-rose-50 text-rose-600' : diff < 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {diff > 0 ? `↑ ${formatCurrency(diff, trip.currency)} over avg` : diff < 0 ? `↓ ${formatCurrency(Math.abs(diff), trip.currency)} under avg` : 'At average'}
+                              </span>
+                            </div>
+                            {topCat && (
+                              <p className="text-[11px] text-slate-400">Top: {CATEGORY_ICONS[topCat[0]]} {topCat[0]} ({formatCurrency(topCat[1], trip.currency)})</p>
+                            )}
+                            {/* Mini progress bar — share of total */}
+                            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                              <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all"
+                                style={{ width: `${dailyExpTotal > 0 ? Math.min((pd.total / dailyExpTotal) * 100, 100) : 0}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {unassigned.count > 0 && (
+                      <div className="flex items-center gap-3 rounded-xl bg-amber-50 p-3 text-sm">
+                        <span>⚠️</span>
+                        <span className="text-amber-700">
+                          {unassigned.count} expense{unassigned.count !== 1 ? 's' : ''} ({formatCurrency(unassigned.total, trip.currency)}) not assigned to anyone
+                        </span>
+                      </div>
+                    )}
+                    {/* Equal share info */}
+                    <div className="flex items-center gap-2 rounded-xl bg-cyan-50 p-3 text-sm text-cyan-700">
+                      <span>💡</span>
+                      <span>Equal share per person: <strong>{formatCurrency(equalShare, trip.currency)}</strong></span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Expense List by Date */}
             {expensesByDate.length > 0 ? (
               <div className="space-y-4">
@@ -915,7 +1010,10 @@ export default function PlanTrip() {
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-slate-800">{exp.description}</p>
-                            <p className="text-xs text-slate-400">{exp.category} • {PAYMENT_METHODS.find((m) => m.value === exp.paymentMethod)?.label || exp.paymentMethod}</p>
+                            <p className="text-xs text-slate-400">
+                              {exp.category} • {PAYMENT_METHODS.find((m) => m.value === exp.paymentMethod)?.label || exp.paymentMethod}
+                              {exp.paidBy && <span className="ml-1 inline-flex items-center rounded-full bg-cyan-50 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-700">👤 {exp.paidBy}</span>}
+                            </p>
                           </div>
                           <span className="text-sm font-bold text-slate-900">{formatCurrency(exp.amount, trip.currency)}</span>
                           <button
@@ -1151,7 +1249,9 @@ export default function PlanTrip() {
                         {days > 0 && <span className="text-slate-400">({days}d)</span>}
                       </span>
                     )}
-                    <span>👥 {trip.travelers}</span>
+                    <span>👥 {trip.travelers}{trip.travelerNames && trip.travelerNames.length > 0 && (
+                      <span className="ml-1 text-xs text-slate-400">({trip.travelerNames.join(', ')})</span>
+                    )}</span>
                     {(trip.dailyExpenses || []).length > 0 && (
                       <span className="text-cyan-600 font-medium">
                         💳 {(trip.dailyExpenses || []).length} expense{(trip.dailyExpenses || []).length > 1 ? 's' : ''}
@@ -1330,7 +1430,14 @@ export default function PlanTrip() {
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-700">Travelers</label>
               <input type="number" min="1" value={form.travelers}
-                onChange={(e) => setForm({ ...form, travelers: Math.max(1, parseInt(e.target.value) || 1) })}
+                onChange={(e) => {
+                  const num = Math.max(1, parseInt(e.target.value) || 1);
+                  const names = [...(form.travelerNames || [])];
+                  // Auto-adjust travelerNames array length
+                  while (names.length < num) names.push('');
+                  while (names.length > num) names.pop();
+                  setForm({ ...form, travelers: num, travelerNames: names });
+                }}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus-ring" />
             </div>
             <div>
@@ -1341,6 +1448,31 @@ export default function PlanTrip() {
                 placeholder="₹ Max budget" />
             </div>
           </div>
+
+          {/* Traveler Names (shown when travelers > 1) */}
+          {form.travelers > 1 && (
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                👥 Traveler Names <span className="text-xs font-normal text-slate-400">(for expense tracking)</span>
+              </label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: form.travelers }, (_, i) => (
+                  <input
+                    key={i}
+                    value={(form.travelerNames || [])[i] || ''}
+                    onChange={(e) => {
+                      const names = [...(form.travelerNames || [])];
+                      while (names.length <= i) names.push('');
+                      names[i] = e.target.value;
+                      setForm({ ...form, travelerNames: names });
+                    }}
+                    className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus-ring"
+                    placeholder={`Traveler ${i + 1} name`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Budget Limit Warning */}
           {form.budgetLimit > 0 && formTotal > form.budgetLimit && (

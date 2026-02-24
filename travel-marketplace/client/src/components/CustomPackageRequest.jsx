@@ -443,7 +443,7 @@ export default function CustomPackageRequest() {
                             onChange={(e) => update('bookedTickets', e.target.checked)}
                             className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                           />
-                          <span className="text-sm text-slate-600">I have booked my travel tickets</span>
+                          <span className="text-sm text-slate-600">I have booked my train tickets</span>
                         </label>
                       </>
                     )}
