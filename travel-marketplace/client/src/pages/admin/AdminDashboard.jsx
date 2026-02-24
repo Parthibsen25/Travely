@@ -21,7 +21,7 @@ const cards = [
 
 export default function AdminDashboard() {
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-page-enter">
       <header className="animate-slide-down">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Admin</p>
         <h1 className="font-display mt-2 text-3xl font-bold text-slate-900">Platform Control Center</h1>

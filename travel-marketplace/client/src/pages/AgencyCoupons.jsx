@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/api';
 import { useToast } from '../context/ToastContext';
+import Loading from '../components/Loading';
 
 const EMPTY = {
   code: '',
@@ -117,16 +118,10 @@ export default function AgencyCoupons() {
 
   const statusColor = { PENDING: 'bg-amber-100 text-amber-700', APPROVED: 'bg-emerald-100 text-emerald-700', REJECTED: 'bg-red-100 text-red-700' };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <Loading fullPage />;
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-page-enter">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">Coupons</h1>
@@ -242,7 +237,7 @@ export default function AgencyCoupons() {
       ) : (
         <div className="space-y-4">
           {coupons.map((c) => (
-            <div key={c._id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div key={c._id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:shadow-md">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-xl font-bold text-amber-600">%</div>

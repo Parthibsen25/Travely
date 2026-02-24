@@ -15,8 +15,8 @@ export default function PublicLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-xl shadow-sm animate-slide-down">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-sm">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <AppLogo />
 
           {/* Desktop nav */}
@@ -84,7 +84,7 @@ export default function PublicLayout() {
         )}
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 animate-page-enter">
         <Outlet />
       </main>
     </div>

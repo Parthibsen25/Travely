@@ -221,10 +221,10 @@ export default function PlanTrip() {
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }
 
-  if (loading) return <Loading />;
+  if (loading) return <Loading fullPage />;
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-page-enter">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -233,7 +233,7 @@ export default function PlanTrip() {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 hover:scale-105"
+          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-card transition hover:bg-slate-800 hover:scale-105"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -254,7 +254,7 @@ export default function PlanTrip() {
           </p>
           <button
             onClick={openCreate}
-            className="mt-6 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+            className="mt-6 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-card transition hover:bg-slate-800"
           >
             Create Your First Trip
           </button>
@@ -264,7 +264,7 @@ export default function PlanTrip() {
           {trips.map((trip) => (
             <div
               key={trip._id}
-              className="group relative rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              className="group relative rounded-2xl border border-slate-200 bg-white shadow-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
             >
               {/* Card Header */}
               <div className="p-5">
@@ -304,12 +304,12 @@ export default function PlanTrip() {
                   {trip.budgetItems.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {getCategorySummary(trip.budgetItems).slice(0, 3).map(([cat, amt]) => (
-                        <span key={cat} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs text-slate-600 shadow-sm">
+                        <span key={cat} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs text-slate-600 shadow-card">
                           {CATEGORY_ICONS[cat]} {formatCurrency(amt)}
                         </span>
                       ))}
                       {getCategorySummary(trip.budgetItems).length > 3 && (
-                        <span className="rounded-md bg-white px-2 py-0.5 text-xs text-slate-400 shadow-sm">
+                        <span className="rounded-md bg-white px-2 py-0.5 text-xs text-slate-400 shadow-card">
                           +{getCategorySummary(trip.budgetItems).length - 3} more
                         </span>
                       )}
@@ -350,7 +350,7 @@ export default function PlanTrip() {
 
               {/* Expanded Details */}
               {expandedTrip === trip._id && (
-                <div className="border-t border-slate-100 px-5 py-4 animate-fade-in">
+                <div className="border-t border-slate-100 px-5 py-4 animate-page-enter">
                   {/* Status actions */}
                   <div className="mb-4 flex flex-wrap gap-2">
                     {trip.status === 'PLANNING' && (
@@ -408,7 +408,7 @@ export default function PlanTrip() {
 
               {/* Delete confirm overlay */}
               {deleteConfirm === trip._id && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/95 backdrop-blur-sm animate-fade-in">
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/95 backdrop-blur-sm animate-page-enter">
                   <div className="text-center p-6">
                     <p className="text-sm font-semibold text-slate-900">Delete this trip?</p>
                     <p className="mt-1 text-xs text-slate-500">This action cannot be undone.</p>
@@ -542,7 +542,7 @@ export default function PlanTrip() {
               {form.budgetItems.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   {form.budgetItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm">
+                    <div key={idx} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-card">
                       <span className="flex items-center gap-2 text-sm text-slate-700">
                         <span>{CATEGORY_ICONS[item.category]}</span>
                         <span className="font-medium">{item.description}</span>
@@ -599,7 +599,7 @@ export default function PlanTrip() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60"
+              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-card transition hover:bg-slate-800 disabled:opacity-60"
             >
               {saving ? 'Saving...' : editingTrip ? 'Update Trip' : 'Create Trip'}
             </button>

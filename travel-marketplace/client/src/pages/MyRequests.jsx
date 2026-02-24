@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/api';
 import { useToast } from '../context/ToastContext';
+import Loading from '../components/Loading';
 
 export default function MyRequests() {
   const { showToast } = useToast();
@@ -46,16 +47,10 @@ export default function MyRequests() {
     CANCELLED: 'bg-red-100 text-red-700',
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-amber-500" />
-      </div>
-    );
-  }
+  if (loading) return <Loading fullPage />;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-fade-in">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-page-enter">
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">My Package Requests</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -78,7 +73,7 @@ export default function MyRequests() {
           {requests.map((req) => (
             <div
               key={req._id}
-              className="rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+              className="rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-md"
             >
               {/* Header */}
               <button

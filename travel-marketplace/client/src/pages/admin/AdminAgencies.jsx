@@ -49,7 +49,7 @@ export default function AdminAgencies() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-page-enter">
       <header className="animate-slide-down">
         <h1 className="font-display text-3xl font-bold text-slate-900">Agency Management</h1>
         <p className="mt-1 text-sm text-slate-600">Approve, reject, or suspend agencies from a single queue.</p>
@@ -66,7 +66,7 @@ export default function AdminAgencies() {
           {agencies.map((agency, index) => (
             <article
               key={agency._id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-scale-in"
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-scale-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">

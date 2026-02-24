@@ -48,7 +48,7 @@ export default function AdminCoupons() {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-page-enter">
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">Coupon Management</h1>
         <p className="mt-1 text-sm text-slate-500">Review and approve coupon codes submitted by agencies.</p>
@@ -73,7 +73,7 @@ export default function AdminCoupons() {
           {coupons.map((c) => {
             const agency = c.agencyId;
             return (
-              <div key={c._id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+              <div key={c._id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:shadow-md">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">

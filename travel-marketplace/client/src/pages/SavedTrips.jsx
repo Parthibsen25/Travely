@@ -20,13 +20,13 @@ export default function SavedTrips() {
       </div>
     );
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 animate-fade-in">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 animate-page-enter">
       <h2 className="font-display mb-6 text-2xl font-bold text-slate-900 animate-slide-down">Saved Trips (Offline)</h2>
       <div className="space-y-4">
         {trips.map((t, index) => (
           <div
             key={t.id}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-scale-in"
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-scale-in"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className="flex justify-between items-center">

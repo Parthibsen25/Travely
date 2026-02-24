@@ -15,7 +15,7 @@ function StatCard({ icon, label, value, sub, color = 'cyan', delay = 0 }) {
   };
   return (
     <article
-      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in"
+      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in"
       style={{ animationDelay: `${delay}s` }}
     >
       <div className={`absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br ${colors[color]} opacity-10 transition-transform duration-500 group-hover:scale-150`} />
@@ -105,7 +105,7 @@ export default function AdminAnalytics() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+      <div className="flex flex-col items-center justify-center py-20 animate-page-enter">
         <div className="rounded-full bg-red-100 p-4">
           <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
         </div>
@@ -119,7 +119,7 @@ export default function AdminAnalytics() {
   if (!stats) return <SkeletonDashboard />;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-page-enter">
       {/* ── Header ── */}
       <header className="animate-slide-down">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Admin</p>
@@ -212,14 +212,14 @@ export default function AdminAnalytics() {
       {/* ── Charts & Lists ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Revenue Trend */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.2s' }}>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-lg font-bold text-slate-900">Revenue Trend</h2>
           <p className="text-xs text-slate-500 mb-4">Last 6 months · Confirmed bookings</p>
           <MiniBarChart data={stats.monthlyRevenue} />
         </section>
 
         {/* Top Agencies */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.25s' }}>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.25s' }}>
           <h2 className="text-lg font-bold text-slate-900">Top Revenue Agencies</h2>
           <p className="text-xs text-slate-500 mb-4">By gross revenue</p>
           {stats.topAgencies && stats.topAgencies.length > 0 ? (
@@ -247,13 +247,13 @@ export default function AdminAnalytics() {
       </div>
 
       {/* ── Top Packages ── */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.3s' }}>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.3s' }}>
         <h2 className="text-lg font-bold text-slate-900">Top Performing Packages</h2>
         <p className="text-xs text-slate-500 mb-4">Packages with the most bookings</p>
         {stats.topPackages && stats.topPackages.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {stats.topPackages.map((pkg, i) => (
-              <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center transition hover:bg-slate-100 hover:shadow-sm">
+              <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center transition hover:bg-slate-100 hover:shadow-card">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-bold text-white shadow mb-2">
                   #{i + 1}
                 </span>
@@ -271,7 +271,7 @@ export default function AdminAnalytics() {
       </section>
 
       {/* ── Recent Bookings ── */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.35s' }}>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.35s' }}>
         <h2 className="text-lg font-bold text-slate-900">Recent Bookings</h2>
         <p className="text-xs text-slate-500 mb-4">Latest 10 platform-wide bookings</p>
         {stats.recentBookings && stats.recentBookings.length > 0 ? (

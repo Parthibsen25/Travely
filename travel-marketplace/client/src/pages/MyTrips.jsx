@@ -220,7 +220,7 @@ export default function MyTrips() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 animate-page-enter">
 
         {/* ════════ Hero Header ════════ */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 p-8 sm:p-10 text-white shadow-2xl animate-slide-down mb-8">
@@ -254,7 +254,7 @@ export default function MyTrips() {
               { label: 'Upcoming', value: stats.pending, color: 'from-amber-500 to-amber-700', icon: '⏳' },
               { label: 'Total Spent', value: `₹${stats.totalSpent.toLocaleString()}`, color: 'from-blue-500 to-blue-700', icon: '💰' },
             ].map((stat) => (
-              <div key={stat.label} className="group relative overflow-hidden rounded-2xl bg-white border border-slate-200/80 p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+              <div key={stat.label} className="group relative overflow-hidden rounded-2xl bg-white border border-slate-200/80 p-4 sm:p-5 shadow-card transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
                 <div className={`absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${stat.color}`} />
                 <div className="flex items-center justify-between">
                   <div>
@@ -270,7 +270,7 @@ export default function MyTrips() {
 
         {/* ════════ Filter Tabs ════════ */}
         {!loading && bookings.length > 0 && (
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide animate-page-enter" style={{ animationDelay: '0.2s' }}>
             {FILTER_TABS.map(tab => {
               const count = tab.key === 'ALL' ? bookings.length : bookings.filter(b => b.status === tab.key).length;
               return (
@@ -351,7 +351,7 @@ export default function MyTrips() {
                 <article
                   key={booking._id}
                   className={`group relative overflow-hidden rounded-2xl bg-white border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in ${
-                    isCancelled ? 'border-slate-200/60 opacity-75 hover:opacity-100' : 'border-slate-200 shadow-sm'
+                    isCancelled ? 'border-slate-200/60 opacity-75 hover:opacity-100' : 'border-slate-200 shadow-card'
                   }`}
                   style={{ animationDelay: `${index * 0.07}s` }}
                 >
@@ -383,7 +383,7 @@ export default function MyTrips() {
                     {/* Countdown badge — top right */}
                     {isUpcoming && (
                       <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-slate-800 shadow-sm">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-slate-800 shadow-card">
                           <svg className="h-3 w-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3" /></svg>
                           {days === 1 ? 'Tomorrow' : `${days} days`}
                         </span>
@@ -496,7 +496,7 @@ export default function MyTrips() {
                               setBusyId('');
                             }
                           }}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-emerald-700 hover:to-green-700 hover:shadow-md disabled:opacity-50"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-card transition-all hover:from-emerald-700 hover:to-green-700 hover:shadow-md disabled:opacity-50"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                           {busyId === booking._id ? 'Processing...' : `Pay ₹${getBookingAmount(booking, booking.finalAmount).toLocaleString()}`}
@@ -515,7 +515,7 @@ export default function MyTrips() {
                           type="button"
                           disabled={busyId === booking._id}
                           onClick={() => openReviewModal(booking)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-md disabled:opacity-50"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-card transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-md disabled:opacity-50"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                           Write Review
@@ -570,7 +570,7 @@ export default function MyTrips() {
                   className="group/star p-1 transition-transform hover:scale-125"
                 >
                   <svg className={`h-8 w-8 transition-colors ${
-                    rating <= reviewRating ? 'text-amber-400 drop-shadow-sm' : 'text-slate-200'
+                    rating <= reviewRating ? 'text-amber-400 drop-shadow-card' : 'text-slate-200'
                   }`} fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>

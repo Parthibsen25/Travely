@@ -55,7 +55,7 @@ export default function AgencyPayouts() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-page-enter">
       <header className="animate-slide-down">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Financial</p>
         <h1 className="font-display mt-1 text-3xl font-bold text-slate-900">Payouts & Settlements</h1>
@@ -119,7 +119,7 @@ export default function AgencyPayouts() {
               return (
                 <article
                   key={payout._id}
-                  className="rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg animate-scale-in overflow-hidden"
+                  className="rounded-2xl border border-slate-200 bg-white shadow-card transition-all duration-300 hover:shadow-lg animate-scale-in overflow-hidden"
                   style={{ animationDelay: `${index * 0.08}s` }}
                 >
                   {/* Header Row */}
@@ -156,7 +156,7 @@ export default function AgencyPayouts() {
 
                   {/* Expanded Financial Breakdown */}
                   {isExpanded && (
-                    <div className="border-t border-slate-100 bg-slate-50 p-5 animate-fade-in">
+                    <div className="border-t border-slate-100 bg-slate-50 p-5 animate-page-enter">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Financial Breakdown</h3>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                         <div className="rounded-xl bg-white p-3 border border-slate-100">

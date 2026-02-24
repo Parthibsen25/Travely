@@ -5,8 +5,8 @@ import AppLogo from '../components/AppLogo';
 import NotificationBell from '../components/NotificationBell';
 
 const linkClass = ({ isActive }) =>
-  `rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-300 ${
-    isActive ? 'bg-amber-500 text-white shadow-md scale-105' : 'text-slate-600 hover:bg-amber-50 hover:text-slate-900 hover:scale-105'
+  `rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 ${
+    isActive ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50 hover:text-slate-900'
   }`;
 
 export default function AgencyLayout() {
@@ -36,8 +36,8 @@ export default function AgencyLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md shadow-sm animate-slide-down">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-sm">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <AppLogo to="/agency/dashboard" />
 
           <nav className="hidden items-center gap-2 sm:flex">
@@ -138,7 +138,7 @@ export default function AgencyLayout() {
         )}
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 animate-page-enter">
         <Outlet />
       </main>
     </div>

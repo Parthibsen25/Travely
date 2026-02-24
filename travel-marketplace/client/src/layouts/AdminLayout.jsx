@@ -5,8 +5,8 @@ import AppLogo from '../components/AppLogo';
 import NotificationBell from '../components/NotificationBell';
 
 const navClass = ({ isActive }) =>
-  `block rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
-    isActive ? 'bg-slate-900 text-white shadow-md scale-105' : 'text-slate-700 hover:bg-slate-100 hover:scale-105'
+  `flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
+    isActive ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
   }`;
 
 export default function AdminLayout() {
@@ -57,7 +57,7 @@ export default function AdminLayout() {
           </div>
         </aside>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 animate-slide-in-right">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 animate-page-enter">
           <Outlet />
         </section>
       </div>

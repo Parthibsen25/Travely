@@ -129,7 +129,7 @@ export default function AgencyBookings() {
     return list;
   }, [bookings, statusFilter, searchQuery, sortKey]);
 
-  if (loading) return <Loading />;
+  if (loading) return <Loading fullPage />;
 
   if (error) {
     return (
@@ -140,7 +140,7 @@ export default function AgencyBookings() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-6xl space-y-6 animate-page-enter">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -151,27 +151,27 @@ export default function AgencyBookings() {
 
       {/* Stats */}
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-6">
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm text-center">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-card text-center">
           <p className="text-sm font-medium text-slate-500">Total</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</p>
         </div>
-        <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm text-center">
+        <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-card text-center">
           <p className="text-sm font-medium text-blue-600">Paid</p>
           <p className="mt-1 text-2xl font-bold text-blue-700">{stats.paid}</p>
         </div>
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm text-center">
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-card text-center">
           <p className="text-sm font-medium text-emerald-600">Confirmed</p>
           <p className="mt-1 text-2xl font-bold text-emerald-700">{stats.confirmed}</p>
         </div>
-        <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm text-center">
+        <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-card text-center">
           <p className="text-sm font-medium text-amber-600">Pending</p>
           <p className="mt-1 text-2xl font-bold text-amber-700">{stats.pending}</p>
         </div>
-        <div className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5 shadow-sm text-center">
+        <div className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5 shadow-card text-center">
           <p className="text-sm font-medium text-red-600">Cancelled</p>
           <p className="mt-1 text-2xl font-bold text-red-700">{stats.cancelled}</p>
         </div>
-        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm text-center">
+        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-card text-center">
           <p className="text-sm font-medium text-indigo-600">Revenue</p>
           <p className="mt-1 text-2xl font-bold text-indigo-700">{formatCurrency(stats.totalRevenue)}</p>
         </div>
@@ -213,7 +213,7 @@ export default function AgencyBookings() {
 
       {/* Bookings List */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-card">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
@@ -228,7 +228,7 @@ export default function AgencyBookings() {
             <div
               key={booking._id}
               onClick={() => setSelectedBooking(booking)}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm cursor-pointer transition hover:shadow-md hover:border-amber-200"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-card cursor-pointer transition hover:shadow-md hover:border-amber-200"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -267,7 +267,7 @@ export default function AgencyBookings() {
                     type="button"
                     disabled={busyId === booking._id}
                     onClick={(e) => handleConfirm(booking._id, e)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-card transition hover:bg-emerald-700 disabled:opacity-50"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     {busyId === booking._id ? 'Confirming…' : 'Confirm Booking'}
@@ -278,7 +278,7 @@ export default function AgencyBookings() {
                     type="button"
                     disabled={busyId === booking._id}
                     onClick={(e) => handleComplete(booking._id, e)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-card transition hover:bg-indigo-700 disabled:opacity-50"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     {busyId === booking._id ? 'Completing…' : 'Mark Complete'}
@@ -410,7 +410,7 @@ export default function AgencyBookings() {
                   handleConfirm(selectedBooking._id);
                   setSelectedBooking(null);
                 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 {busyId === selectedBooking._id ? 'Confirming…' : 'Confirm This Booking'}
@@ -424,7 +424,7 @@ export default function AgencyBookings() {
                   handleComplete(selectedBooking._id);
                   setSelectedBooking(null);
                 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-indigo-700 disabled:opacity-50"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {busyId === selectedBooking._id ? 'Completing…' : 'Mark Trip as Completed'}

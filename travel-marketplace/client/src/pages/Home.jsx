@@ -230,15 +230,16 @@ export default function Home() {
       {/* Stats Section - Real data from API */}
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
             {[
-              { value: stats.packages || 0, suffix: '+', label: 'Travel Packages', color: 'text-cyan-600' },
-              { value: stats.agencies || 0, suffix: '+', label: 'Verified Agencies', color: 'text-blue-600' },
-              { value: stats.bookings || 0, suffix: '+', label: 'Bookings Made', color: 'text-purple-600' },
-              { value: stats.avgRating ? Number(stats.avgRating).toFixed(1) : '0.0', suffix: '★', label: 'Average Rating', color: 'text-amber-500' }
+              { value: stats.packages || 0, suffix: '+', label: 'Travel Packages', color: 'text-cyan-600', icon: '🎒' },
+              { value: stats.agencies || 0, suffix: '+', label: 'Verified Agencies', color: 'text-blue-600', icon: '🏢' },
+              { value: stats.bookings || 0, suffix: '+', label: 'Bookings Made', color: 'text-purple-600', icon: '📋' },
+              { value: stats.avgRating ? Number(stats.avgRating).toFixed(1) : '0.0', suffix: '★', label: 'Average Rating', color: 'text-amber-500', icon: '⭐' }
             ].map((stat, i) => (
-              <div key={i} className="text-center rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm animate-scale-in transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className={`text-3xl font-bold sm:text-4xl ${stat.color}`}>{stat.value}{stat.suffix}</div>
+              <div key={i} className="group relative overflow-hidden text-center rounded-2xl border border-slate-100 bg-white p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="absolute -right-3 -top-3 text-4xl opacity-10 transition-transform duration-500 group-hover:scale-150">{stat.icon}</div>
+                <div className={`font-display text-3xl font-bold sm:text-4xl ${stat.color}`}>{stat.value}{stat.suffix}</div>
                 <div className="mt-2 text-sm font-medium text-slate-500">{stat.label}</div>
               </div>
             ))}

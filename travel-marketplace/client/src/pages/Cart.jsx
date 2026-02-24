@@ -38,14 +38,14 @@ export default function Cart() {
     }
   };
 
-  if (loading) return <Loading />;
+  if (loading) return <Loading fullPage />;
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+    <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 animate-page-enter">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">My Cart</h1>
+          <h1 className="font-display text-2xl font-bold text-slate-900">My Cart</h1>
           <p className="mt-1 text-sm text-slate-500">
             {items.length === 0
               ? 'Your cart is empty'
@@ -55,7 +55,7 @@ export default function Cart() {
         {items.length > 0 && (
           <button
             onClick={handleClearCart}
-            className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
           >
             Clear Cart
           </button>
@@ -64,16 +64,15 @@ export default function Cart() {
 
       {/* Empty state */}
       {items.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-          <svg className="mb-4 h-16 w-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-          </svg>
-          <p className="text-lg font-semibold text-slate-600">No packages in your cart</p>
-          <p className="mt-1 text-sm text-slate-400">Browse packages and add them to your cart to book.</p>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center shadow-card">
+          <span className="text-5xl">🛒</span>
+          <p className="mt-4 font-display text-lg font-bold text-slate-900">Your cart is empty</p>
+          <p className="mt-1.5 text-sm text-slate-500">Browse packages and add them to your cart to book.</p>
           <Link
             to="/app/packages"
-            className="mt-6 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:shadow-lg hover:scale-105"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 hover:shadow-xl"
           >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
             Browse Packages
           </Link>
         </div>
@@ -82,7 +81,7 @@ export default function Cart() {
       {/* Cart Items */}
       <div className="space-y-4">
         {items.map((pkg) => (
-          <div key={pkg._id} className="flex flex-col sm:flex-row gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+          <div key={pkg._id} className="flex flex-col sm:flex-row gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover">
             {/* Image */}
             <Link to={`/app/packages/${pkg._id}`} className="flex-shrink-0">
               <img
@@ -142,13 +141,13 @@ export default function Cart() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleRemove(pkg._id, pkg.title)}
-                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600 hover:bg-red-50"
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-red-300 hover:text-red-600 hover:bg-red-50"
                   >
                     Remove
                   </button>
                   <Link
                     to={`/app/booking?packageId=${pkg._id}`}
-                    className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-2 text-sm font-bold text-white shadow-md transition hover:shadow-lg hover:scale-105"
+                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 hover:shadow-xl"
                   >
                     Proceed to Book
                   </Link>

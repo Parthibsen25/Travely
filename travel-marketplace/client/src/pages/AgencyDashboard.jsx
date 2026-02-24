@@ -15,7 +15,7 @@ function StatCard({ icon, label, value, sub, color = 'cyan', delay = 0 }) {
   };
   return (
     <article
-      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in"
+      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-scale-in"
       style={{ animationDelay: `${delay}s` }}
     >
       <div className={`absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br ${colors[color]} opacity-10 transition-transform duration-500 group-hover:scale-150`} />
@@ -98,7 +98,7 @@ export default function AgencyDashboard() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+      <div className="flex flex-col items-center justify-center py-20 animate-page-enter">
         <div className="rounded-full bg-red-100 p-4">
           <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
         </div>
@@ -114,7 +114,7 @@ export default function AgencyDashboard() {
   const { agency, packages, bookings, earnings, reviews, monthlyRevenue, topPackages, recentBookings } = data;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-page-enter">
       {/* ── Header ── */}
       <header className="animate-slide-down">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -182,14 +182,14 @@ export default function AgencyDashboard() {
       {/* ── Charts & Lists ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Revenue Trend */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.2s' }}>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-lg font-bold text-slate-900">Revenue Trend</h2>
           <p className="text-xs text-slate-500 mb-4">Last 6 months · Confirmed bookings</p>
           <MiniBarChart data={monthlyRevenue} />
         </section>
 
         {/* Top Packages */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.3s' }}>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.3s' }}>
           <h2 className="text-lg font-bold text-slate-900">Top Performing Packages</h2>
           <p className="text-xs text-slate-500 mb-4">By booking count</p>
           {topPackages && topPackages.length > 0 ? (
@@ -296,7 +296,7 @@ export default function AgencyDashboard() {
       </section>
 
       {/* ── Recent Bookings ── */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-scale-in" style={{ animationDelay: '0.4s' }}>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card animate-scale-in" style={{ animationDelay: '0.4s' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Recent Bookings</h2>

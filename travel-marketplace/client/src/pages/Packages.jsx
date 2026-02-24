@@ -212,7 +212,7 @@ function PackageGridCard({ pkg }) {
   const extraInclusionCount = (pkg.inclusions || []).length - 3;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5">
       {/* ── Image ───────────────────────────────────────────── */}
       <div className="relative h-48 w-full flex-shrink-0 overflow-hidden">
         <Link to={`/app/packages/${pkg._id}`} className="block h-full">
@@ -540,7 +540,7 @@ export default function Packages() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 animate-page-enter">
       {/* Top search bar */}
       <div className="mb-6">
         <form onSubmit={handleSearch} className="flex gap-2">
@@ -553,10 +553,10 @@ export default function Packages() {
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder="Search destination, package, or keyword..."
-              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-800 shadow-sm transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              className="focus-ring w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-800 shadow-sm"
             />
           </div>
-          <button type="submit" className="rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-orange-600 hover:to-red-600">
+          <button type="submit" className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 hover:shadow-xl">
             Search
           </button>
         </form>
@@ -565,7 +565,7 @@ export default function Packages() {
       <div className="flex gap-6">
         {/* ─── Desktop Sidebar ─────────────────────────────────────────── */}
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Filters</h2>
               {activeFilterCount > 0 && (
@@ -599,7 +599,7 @@ export default function Packages() {
             <select
               value={sort}
               onChange={e => setSort(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              className="focus-ring rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm"
             >
               {SORT_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -652,13 +652,13 @@ export default function Packages() {
                   <button onClick={() => toggleArr(setActivities, a)} className="hover:text-rose-900">×</button>
                 </span>
               ))}
-              <button onClick={clearAll} className="text-xs font-medium text-orange-500 hover:text-orange-600">Clear All</button>
+              <button onClick={clearAll} className="text-xs font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Clear All</button>
             </div>
           )}
 
           {/* Package list */}
           {loading ? (
-            <Loading />
+            <Loading fullPage />
           ) : error ? (
             <div className="rounded-xl bg-red-50 border border-red-200 p-6">
               <div className="flex items-center gap-3">
@@ -669,14 +669,14 @@ export default function Packages() {
               </div>
             </div>
           ) : packages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-16 text-center shadow-card">
               <svg className="mx-auto h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="mt-4 text-lg font-semibold text-slate-900">No packages found</p>
               <p className="mt-2 text-sm text-slate-600">Try adjusting your filters or search terms</p>
               {activeFilterCount > 0 && (
-                <button onClick={clearAll} className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
+                  <button onClick={clearAll} className="mt-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-600 hover:to-blue-600">
                   Clear All Filters
                 </button>
               )}
@@ -712,7 +712,7 @@ export default function Packages() {
                   <button
                     key={num}
                     onClick={() => setPage(num)}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium transition ${num === page ? 'bg-orange-500 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                    className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-200 ${num === page ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/20' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
                   >
                     {num}
                   </button>
@@ -733,7 +733,7 @@ export default function Packages() {
       {/* ─── Mobile Filter Drawer ──────────────────────────────────────── */}
       {mobileFilters && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilters(false)} />
+          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setMobileFilters(false)} />
           <div className="relative ml-auto w-80 max-w-full bg-white shadow-xl overflow-y-auto">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
               <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Filters</h2>
@@ -750,7 +750,7 @@ export default function Packages() {
               {sidebarContent}
             </div>
             <div className="sticky bottom-0 border-t border-slate-100 bg-white p-4">
-              <button onClick={() => setMobileFilters(false)} className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 py-3 text-sm font-semibold text-white">
+              <button onClick={() => setMobileFilters(false)} className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25">
                 Show {total} Packages
               </button>
             </div>

@@ -138,76 +138,79 @@ export default function Profile() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-fade-in">
-      <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-xl font-bold text-white">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6 animate-page-enter">
+      <header className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card">
+        <div className="flex flex-wrap items-center gap-5">
+          <div className="flex h-18 w-18 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-2xl font-bold text-white shadow-lg shadow-cyan-500/20">
             {initials}
           </div>
           <div>
             <h1 className="font-display text-2xl font-bold text-slate-900">Profile</h1>
-            <p className="text-sm text-slate-600">Manage your account details</p>
+            <p className="mt-0.5 text-sm text-slate-500">Manage your account details</p>
             {memberSince && (
-              <p className="mt-1 text-xs text-slate-500">Member since {memberSince}</p>
+              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-400">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+                Member since {memberSince}
+              </p>
             )}
           </div>
         </div>
       </header>
 
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm text-center">
-          <p className="text-sm font-medium text-slate-500">Total Trips</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{loadingBookings ? '...' : stats.total}</p>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card text-center">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Trips</p>
+          <p className="mt-2 font-display text-2xl font-bold text-slate-900">{loadingBookings ? '...' : stats.total}</p>
         </div>
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm text-center">
-          <p className="text-sm font-medium text-emerald-600">Confirmed</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-700">{loadingBookings ? '...' : stats.confirmed}</p>
+        <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-5 shadow-card text-center">
+          <p className="text-xs font-medium uppercase tracking-wider text-emerald-600">Confirmed</p>
+          <p className="mt-2 font-display text-2xl font-bold text-emerald-700">{loadingBookings ? '...' : stats.confirmed}</p>
         </div>
-        <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm text-center">
-          <p className="text-sm font-medium text-amber-600">Pending</p>
-          <p className="mt-1 text-2xl font-bold text-amber-700">{loadingBookings ? '...' : stats.pending}</p>
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 shadow-card text-center">
+          <p className="text-xs font-medium uppercase tracking-wider text-amber-600">Pending</p>
+          <p className="mt-2 font-display text-2xl font-bold text-amber-700">{loadingBookings ? '...' : stats.pending}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm text-center">
-          <p className="text-sm font-medium text-slate-500">Cancelled</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{loadingBookings ? '...' : stats.cancelled}</p>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card text-center">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Cancelled</p>
+          <p className="mt-2 font-display text-2xl font-bold text-slate-900">{loadingBookings ? '...' : stats.cancelled}</p>
         </div>
       </section>
 
-      <form onSubmit={handleSave} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <form onSubmit={handleSave} className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Profile Details</h2>
+          <h2 className="font-display text-lg font-bold text-slate-900">Profile Details</h2>
           {!isEditing ? (
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+              className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition-all duration-200 hover:from-cyan-600 hover:to-blue-600"
             >
               Edit
             </button>
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Full Name</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Full Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={!isEditing}
-              className={`w-full rounded-lg border px-3 py-2 text-sm ${
-                isEditing ? 'border-slate-300' : 'border-slate-200 bg-slate-50 text-slate-500'
+              className={`focus-ring w-full rounded-xl border px-4 py-2.5 text-sm ${
+                isEditing ? 'border-slate-200 bg-slate-50/50' : 'border-slate-200 bg-slate-50 text-slate-500'
               }`}
               placeholder="Your full name"
               required
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Email</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
             <input
               type="email"
               value={email}
               disabled
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500"
               placeholder="you@example.com"
               required
             />
@@ -242,8 +245,8 @@ export default function Profile() {
         ) : null}
       </form>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Security</h2>
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-card">
+        <h2 className="font-display text-lg font-bold text-slate-900">Security</h2>
         <p className="mt-1 text-sm text-slate-600">Change your account password.</p>
         <div className="mt-4 flex justify-end">
           <button
@@ -256,8 +259,8 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Account</h2>
+      <div className="rounded-2xl border border-red-100/80 bg-white p-6 sm:p-8 shadow-card">
+        <h2 className="font-display text-lg font-bold text-slate-900">Account</h2>
         <p className="mt-1 text-sm text-slate-600">Sign out of your account on this device.</p>
         <div className="mt-4 flex justify-end">
           <button
@@ -284,22 +287,22 @@ export default function Profile() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">New Password</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">New Password</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="focus-ring w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm"
               required
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Confirm Password</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Confirm Password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="focus-ring w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm"
               required
             />
           </div>

@@ -209,10 +209,10 @@ export default function AgencyPackages() {
     }
   }
 
-  if (initialLoading) return <Loading />;
+  if (initialLoading) return <Loading fullPage />;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-6xl space-y-6 animate-page-enter">
       {/* ─── Welcome Header ─── */}
       <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-6 shadow-lg sm:p-8">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzMuMzE0IDAgNiAyLjY4NiA2IDZzLTIuNjg2IDYtNiA2LTYtMi42ODYtNi02IDIuNjg2LTYgNi02eiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
@@ -233,7 +233,7 @@ export default function AgencyPackages() {
           { label: 'Avg. Price', value: `₹${stats.avgPrice.toLocaleString('en-IN')}`, icon: '💰', border: 'border-blue-200', bg: 'from-blue-50 to-white' },
           { label: 'Reviews', value: stats.totalReviews, icon: '⭐', border: 'border-purple-200', bg: 'from-purple-50 to-white' },
         ].map((s) => (
-          <div key={s.label} className={`rounded-2xl border ${s.border} bg-gradient-to-br ${s.bg} p-4 shadow-sm text-center transition hover:shadow-md`}>
+          <div key={s.label} className={`rounded-2xl border ${s.border} bg-gradient-to-br ${s.bg} p-4 shadow-card text-center transition hover:shadow-md`}>
             <span className="text-xl">{s.icon}</span>
             <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
             <p className="mt-0.5 text-xl font-bold text-slate-900">{s.value}</p>
@@ -242,7 +242,7 @@ export default function AgencyPackages() {
       </section>
 
       {/* ─── Tabs ─── */}
-      <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+      <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-card">
         <button
           type="button"
           onClick={() => setActiveTab('packages')}
@@ -308,7 +308,7 @@ export default function AgencyPackages() {
             <button
               type="button"
               onClick={() => { resetForm(); setActiveTab('create'); }}
-              className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 hover:shadow-md"
+              className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-card transition hover:bg-amber-600 hover:shadow-md"
             >
               + New Package
             </button>
@@ -327,7 +327,7 @@ export default function AgencyPackages() {
                   : 'Try adjusting your search or filter.'}
               </p>
               {packages.length === 0 && (
-                <button onClick={() => setActiveTab('create')} className="mt-4 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600">
+                <button onClick={() => setActiveTab('create')} className="mt-4 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-card transition hover:bg-amber-600">
                   Create Package
                 </button>
               )}
@@ -337,7 +337,7 @@ export default function AgencyPackages() {
               {filteredPackages.map((pkg, idx) => (
                 <article
                   key={pkg._id}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-scale-in"
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-scale-in"
                   style={{ animationDelay: `${idx * 0.05}s` }}
                 >
                   {/* Image */}
@@ -443,7 +443,7 @@ export default function AgencyPackages() {
       {activeTab === 'create' && (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section: Basic Info */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-lg">📝</div>
@@ -476,7 +476,7 @@ export default function AgencyPackages() {
           </div>
 
           {/* Section: Image */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-lg">🖼️</div>
               <div>
@@ -496,7 +496,7 @@ export default function AgencyPackages() {
               {imageUrl && !imagePreviewError && (
                 <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-xl border border-slate-200">
                   <img src={mediaUrl(imageUrl)} alt="Preview" className="h-full w-full object-cover" onError={() => setImagePreviewError(true)} />
-                  <button type="button" onClick={() => { setImageUrl(''); setImagePreviewError(false); }} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 shadow-sm transition hover:bg-red-50">
+                  <button type="button" onClick={() => { setImageUrl(''); setImagePreviewError(false); }} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 shadow-card transition hover:bg-red-50">
                     <svg className="h-3.5 w-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -505,7 +505,7 @@ export default function AgencyPackages() {
           </div>
 
           {/* Section: Pricing & Details */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-lg">💰</div>
               <div>
@@ -558,7 +558,7 @@ export default function AgencyPackages() {
           </div>
 
           {/* Section: Inclusions & Themes */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-lg">🎯</div>
               <div>
@@ -629,7 +629,7 @@ export default function AgencyPackages() {
           </div>
 
           {/* Section: Itinerary */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-100 text-lg">🗺️</div>
@@ -667,7 +667,7 @@ export default function AgencyPackages() {
           {/* Section: Cancellation & Offers */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Cancellation Policy */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-lg">🛡️</div>
@@ -693,7 +693,7 @@ export default function AgencyPackages() {
             </div>
 
             {/* Offers */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-lg">🏷️</div>
