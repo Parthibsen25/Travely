@@ -193,6 +193,12 @@ export default function PlanTrip() {
   });
   const [addingExpense, setAddingExpense] = useState(false);
 
+  // Editing expense
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [editExpForm, setEditExpForm] = useState({
+    date: '', category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: ''
+  });
+
   // Checklist
   const [newCheckItem, setNewCheckItem] = useState('');
 
@@ -434,6 +440,48 @@ export default function PlanTrip() {
       showToast('Expense removed', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to remove expense', 'error');
+    }
+  }
+
+  function startEditExpense(exp) {
+    setEditingExpenseId(exp._id);
+    setEditExpForm({
+      date: exp.date ? new Date(exp.date).toISOString().slice(0, 10) : '',
+      category: exp.category,
+      description: exp.description,
+      amount: exp.amount,
+      paymentMethod: exp.paymentMethod || 'cash',
+      paidBy: exp.paidBy || ''
+    });
+  }
+
+  function cancelEditExpense() {
+    setEditingExpenseId(null);
+  }
+
+  async function handleUpdateExpense(tripId, expenseId) {
+    if (!editExpForm.description.trim() || !editExpForm.amount || Number(editExpForm.amount) <= 0) {
+      showToast('Enter description and valid amount', 'warning');
+      return;
+    }
+    try {
+      const result = await apiFetch(`/api/custom-trips/${tripId}/expenses/${expenseId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          date: editExpForm.date,
+          category: editExpForm.category,
+          description: editExpForm.description.trim(),
+          amount: Number(editExpForm.amount),
+          paymentMethod: editExpForm.paymentMethod,
+          paidBy: editExpForm.paidBy
+        })
+      });
+      setSelectedTrip(result.trip);
+      setTrips((prev) => prev.map((t) => t._id === tripId ? result.trip : t));
+      setEditingExpenseId(null);
+      showToast('Expense updated', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to update expense', 'error');
     }
   }
 
@@ -821,7 +869,20 @@ export default function PlanTrip() {
         {/* ────── Expenses Tab ────── */}
         {activeTab === 'expenses' && (
           <div className="space-y-4 animate-page-enter">
-            {/* Add expense form */}
+            {/* Completed / Cancelled notice */}
+            {(trip.status === 'COMPLETED' || trip.status === 'CANCELLED') && (
+              <div className={`flex items-center gap-3 rounded-2xl p-4 text-sm font-medium ${
+                trip.status === 'COMPLETED'
+                  ? 'bg-slate-50 border border-slate-200 text-slate-600'
+                  : 'bg-red-50 border border-red-100 text-red-600'
+              }`}>
+                <span className="text-lg">{trip.status === 'COMPLETED' ? '✅' : '🚫'}</span>
+                <span>This trip is <strong>{trip.status.toLowerCase()}</strong>. Expenses are locked and cannot be added or edited.</span>
+              </div>
+            )}
+
+            {/* Add expense form — hidden for completed/cancelled trips */}
+            {trip.status !== 'COMPLETED' && trip.status !== 'CANCELLED' && (
             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-card">
               <h3 className="font-display text-lg font-bold text-slate-900 mb-4">Log Expense</h3>
               <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${(trip.travelerNames && trip.travelerNames.length > 0) ? 'lg:grid-cols-[1fr_130px_1fr_100px_110px_120px_auto]' : 'lg:grid-cols-[1fr_140px_1fr_120px_120px_auto]'}`}>
@@ -884,6 +945,7 @@ export default function PlanTrip() {
                 </button>
               </div>
             </div>
+            )}
 
             {/* Expense Summary */}
             {dailyExpTotal > 0 && (
@@ -1003,28 +1065,96 @@ export default function PlanTrip() {
                     </div>
                     <div className="divide-y divide-slate-50">
                       {exps.map((exp) => (
-                        <div key={exp._id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/50 transition">
-                          <span className="flex h-9 w-9 items-center justify-center rounded-lg text-lg"
-                            style={{ backgroundColor: `${CATEGORY_COLORS[exp.category]}15` }}>
-                            {CATEGORY_ICONS[exp.category]}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-slate-800">{exp.description}</p>
-                            <p className="text-xs text-slate-400">
-                              {exp.category} • {PAYMENT_METHODS.find((m) => m.value === exp.paymentMethod)?.label || exp.paymentMethod}
-                              {exp.paidBy && <span className="ml-1 inline-flex items-center rounded-full bg-cyan-50 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-700">👤 {exp.paidBy}</span>}
-                            </p>
+                        editingExpenseId === exp._id && trip.status !== 'COMPLETED' && trip.status !== 'CANCELLED' ? (
+                          /* ── Inline Edit Row ── */
+                          <div key={exp._id} className="bg-cyan-50/40 px-5 py-3 space-y-3">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_130px_1fr_100px_110px_auto]">
+                              <input type="date" value={editExpForm.date}
+                                onChange={(e) => setEditExpForm({ ...editExpForm, date: e.target.value })}
+                                className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm focus-ring" />
+                              <select value={editExpForm.category}
+                                onChange={(e) => setEditExpForm({ ...editExpForm, category: e.target.value })}
+                                className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm focus-ring">
+                                {BUDGET_CATEGORIES.map((cat) => (
+                                  <option key={cat} value={cat}>{CATEGORY_ICONS[cat]} {cat}</option>
+                                ))}
+                              </select>
+                              <input value={editExpForm.description}
+                                onChange={(e) => setEditExpForm({ ...editExpForm, description: e.target.value })}
+                                className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm focus-ring"
+                                placeholder="Description" />
+                              <input type="number" min="0" value={editExpForm.amount}
+                                onChange={(e) => setEditExpForm({ ...editExpForm, amount: e.target.value })}
+                                className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm focus-ring"
+                                placeholder="₹ Amount" />
+                              <select value={editExpForm.paymentMethod}
+                                onChange={(e) => setEditExpForm({ ...editExpForm, paymentMethod: e.target.value })}
+                                className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm focus-ring">
+                                {PAYMENT_METHODS.map((m) => (
+                                  <option key={m.value} value={m.value}>{m.label}</option>
+                                ))}
+                              </select>
+                              {trip.travelerNames && trip.travelerNames.length > 0 && (
+                                <select value={editExpForm.paidBy}
+                                  onChange={(e) => setEditExpForm({ ...editExpForm, paidBy: e.target.value })}
+                                  className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm focus-ring">
+                                  <option value="">Who paid?</option>
+                                  {trip.travelerNames.map((name) => (
+                                    <option key={name} value={name}>{name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={cancelEditExpense}
+                                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100">
+                                Cancel
+                              </button>
+                              <button onClick={() => handleUpdateExpense(trip._id, exp._id)}
+                                className="rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow transition hover:shadow-lg">
+                                Save
+                              </button>
+                            </div>
                           </div>
-                          <span className="text-sm font-bold text-slate-900">{formatCurrency(exp.amount, trip.currency)}</span>
-                          <button
-                            onClick={() => handleRemoveExpense(trip._id, exp._id)}
-                            className="rounded-lg p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
+                        ) : (
+                          /* ── Normal Display Row ── */
+                          <div key={exp._id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/50 transition">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg text-lg"
+                              style={{ backgroundColor: `${CATEGORY_COLORS[exp.category]}15` }}>
+                              {CATEGORY_ICONS[exp.category]}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-slate-800">{exp.description}</p>
+                              <p className="text-xs text-slate-400">
+                                {exp.category} • {PAYMENT_METHODS.find((m) => m.value === exp.paymentMethod)?.label || exp.paymentMethod}
+                                {exp.paidBy && <span className="ml-1 inline-flex items-center rounded-full bg-cyan-50 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-700">👤 {exp.paidBy}</span>}
+                              </p>
+                            </div>
+                            <span className="text-sm font-bold text-slate-900">{formatCurrency(exp.amount, trip.currency)}</span>
+                            {trip.status !== 'COMPLETED' && trip.status !== 'CANCELLED' && (
+                              <>
+                                <button
+                                  onClick={() => startEditExpense(exp)}
+                                  className="rounded-lg p-1.5 text-slate-300 hover:text-cyan-600 hover:bg-cyan-50 transition"
+                                  title="Edit expense"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveExpense(trip._id, exp._id)}
+                                  className="rounded-lg p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
+                                  title="Delete expense"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )
                       ))}
                     </div>
                   </div>

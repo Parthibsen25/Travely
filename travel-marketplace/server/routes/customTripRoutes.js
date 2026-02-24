@@ -10,6 +10,7 @@ const {
   deleteTrip,
   getTemplates,
   addExpense,
+  updateExpense,
   removeExpense,
   duplicateTrip,
   getTripSummary
@@ -28,6 +29,7 @@ router.delete('/:id', deleteTrip);
 
 // Daily expenses
 router.post('/:id/expenses', addExpense);
+router.put('/:id/expenses/:expenseId', updateExpense);
 router.delete('/:id/expenses/:expenseId', removeExpense);
 
 // Duplicate & Summary

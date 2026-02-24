@@ -253,6 +253,34 @@ exports.removeExpense = async (req, res) => {
   }
 };
 
+// PUT /api/custom-trips/:id/expenses/:expenseId — update a daily expense
+exports.updateExpense = async (req, res) => {
+  try {
+    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    const expense = trip.dailyExpenses.id(req.params.expenseId);
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
+
+    const { date, category, description, amount, paymentMethod, paidBy } = req.body;
+    if (date !== undefined) expense.date = date;
+    if (category !== undefined) expense.category = category;
+    if (description !== undefined) expense.description = description.trim();
+    if (amount !== undefined && amount > 0) expense.amount = Number(amount);
+    if (paymentMethod !== undefined) expense.paymentMethod = paymentMethod;
+    if (paidBy !== undefined) expense.paidBy = paidBy;
+
+    await trip.save();
+    res.json({ trip });
+  } catch (err) {
+    console.error(err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: err.message });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 /* ─── Duplicate Trip ──────────────────────────────────────────────────── */
 
 // POST /api/custom-trips/:id/duplicate — clone a trip
