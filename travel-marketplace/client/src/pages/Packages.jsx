@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -16,20 +16,20 @@ const CATEGORIES = [
 ];
 
 const DURATION_RANGES = [
-  { label: '1 to 3 Days', min: 1, max: 3 },
-  { label: '4 to 6 Days', min: 4, max: 6 },
-  { label: '7 to 9 Days', min: 7, max: 9 },
-  { label: '10 to 12 Days', min: 10, max: 12 },
-  { label: '13 or more', min: 13, max: null },
+  { label: '1–3 Days', min: 1, max: 3 },
+  { label: '4–6 Days', min: 4, max: 6 },
+  { label: '7–9 Days', min: 7, max: 9 },
+  { label: '10–12 Days', min: 10, max: 12 },
+  { label: '13+ Days', min: 13, max: null },
 ];
 
 const BUDGET_RANGES = [
-  { label: 'Less Than ₹10,000', min: 0, max: 10000 },
-  { label: '₹10,000 – ₹20,000', min: 10000, max: 20000 },
-  { label: '₹20,000 – ₹40,000', min: 20000, max: 40000 },
-  { label: '₹40,000 – ₹60,000', min: 40000, max: 60000 },
-  { label: '₹60,000 – ₹80,000', min: 60000, max: 80000 },
-  { label: 'Above ₹80,000', min: 80000, max: null },
+  { label: 'Under ₹10K', min: 0, max: 10000, sub: '₹0 – ₹10,000' },
+  { label: '₹10K – ₹20K', min: 10000, max: 20000, sub: '₹10,000 – ₹20,000' },
+  { label: '₹20K – ₹40K', min: 20000, max: 40000, sub: '₹20,000 – ₹40,000' },
+  { label: '₹40K – ₹60K', min: 40000, max: 60000, sub: '₹40,000 – ₹60,000' },
+  { label: '₹60K – ₹80K', min: 60000, max: 80000, sub: '₹60,000 – ₹80,000' },
+  { label: '₹80K+', min: 80000, max: null, sub: 'Above ₹80,000' },
 ];
 
 const HOTEL_STARS = [5, 4, 3, 2];
@@ -37,7 +37,7 @@ const HOTEL_STARS = [5, 4, 3, 2];
 const INCLUSIONS = [
   { value: 'meals', label: 'Meals', icon: '🍽️' },
   { value: 'cab', label: 'Cab', icon: '🚕' },
-  { value: 'shared-coach', label: 'Shared Coach', icon: '🚌' },
+  { value: 'shared-coach', label: 'Coach', icon: '🚌' },
   { value: 'flights', label: 'Flights', icon: '✈️' },
   { value: 'hotel', label: 'Hotel', icon: '🏨' },
   { value: 'sightseeing', label: 'Sightseeing', icon: '📸' },
@@ -68,51 +68,205 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
 ];
 
+/* Section icons for filter headers */
+const SECTION_ICONS = {
+  dest: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  cat: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  ),
+  dur: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  budget: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  hotel: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+    </svg>
+  ),
+  inc: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  act: (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+    </svg>
+  ),
+};
+
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(amount || 0));
 }
 
-/* ─── Sidebar Filter Section ────────────────────────────────────────── */
-function FilterSection({ title, children, onClear, collapsed, onToggle }) {
+/* ─── Sidebar Filter Section (premium) ──────────────────────────────── */
+function FilterSection({ title, icon, children, onClear, collapsed, onToggle, activeCount = 0 }) {
   return (
-    <div className="border-b border-slate-100 py-4">
+    <div className="border-b border-slate-100/80 last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between text-sm font-semibold text-slate-800"
+        className="group flex w-full items-center gap-2.5 py-4 text-left"
       >
-        {title}
-        <svg className={`h-4 w-4 text-slate-400 transition-transform ${collapsed ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors duration-200 ${
+          activeCount > 0 ? 'bg-cyan-50 text-cyan-600' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-500'
+        }`}>
+          {icon}
+        </span>
+        <span className="flex-1 text-[13px] font-bold text-slate-800 tracking-wide uppercase">{title}</span>
+        {activeCount > 0 && (
+          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+            {activeCount}
+          </span>
+        )}
+        <svg className={`h-4 w-4 text-slate-300 transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {!collapsed && (
-        <div className="mt-3 space-y-2 animate-fade-in">
+
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? 'max-h-0 opacity-0' : 'max-h-[600px] opacity-100'}`}>
+        <div className="pb-4 space-y-2">
           {children}
           {onClear && (
-            <button type="button" onClick={onClear} className="text-xs font-medium text-orange-500 hover:text-orange-600 uppercase tracking-wide">
+            <button
+              type="button"
+              onClick={onClear}
+              className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-500 uppercase tracking-wider transition-colors"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
               Clear
             </button>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function CheckboxOption({ checked, onChange, label, icon, count }) {
+/* ─── Pill Toggle (for Inclusions & Activities) ─────────────────────── */
+function PillToggle({ checked, onChange, label, icon }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 hover:text-slate-900 group">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 cursor-pointer"
-      />
-      {icon && <span className="text-sm">{icon}</span>}
-      <span className="flex-1 group-hover:text-slate-900">{typeof label === 'string' ? label : label}</span>
-      {count !== undefined && <span className="text-xs text-slate-400">({count})</span>}
-    </label>
+    <button
+      type="button"
+      onClick={onChange}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+        checked
+          ? 'border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50 text-cyan-700 shadow-sm ring-1 ring-cyan-100'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      <span className="text-sm leading-none">{icon}</span>
+      {label}
+      {checked && (
+        <svg className="h-3 w-3 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+/* ─── Destination Toggle Pill ────────────────────────────────────────── */
+function DestPill({ checked, onChange, label, icon }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 py-2.5 text-xs font-bold transition-all duration-200 ${
+        checked
+          ? 'border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm'
+          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      <span className="text-base">{icon}</span>
+      {label}
+    </button>
+  );
+}
+
+/* ─── Star Rating Bar ────────────────────────────────────────────────── */
+function StarRatingOption({ stars, checked, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 transition-all duration-200 ${
+        checked
+          ? 'border-amber-300 bg-amber-50/80 shadow-sm'
+          : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'
+      }`}
+    >
+      <div className="flex items-center gap-0.5">
+        {[...Array(5)].map((_, i) => (
+          <svg key={i} className={`h-3.5 w-3.5 ${i < stars ? 'text-amber-400' : 'text-slate-200'}`} fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+      <span className={`text-xs font-medium ${checked ? 'text-amber-700' : 'text-slate-500'}`}>{stars} Star</span>
+      {checked && (
+        <svg className="ml-auto h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+/* ─── Duration / Budget Chip Select ──────────────────────────────────── */
+function ChipSelect({ items, selected, onToggle, color = 'cyan' }) {
+  const colors = {
+    cyan: { active: 'border-cyan-300 bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100', idle: 'border-slate-200 text-slate-600' },
+    emerald: { active: 'border-emerald-300 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100', idle: 'border-slate-200 text-slate-600' },
+  };
+  const c = colors[color] || colors.cyan;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onToggle(i)}
+          className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-200 ${
+            selected.includes(i) ? c.active : `${c.idle} bg-white hover:bg-slate-50 hover:border-slate-300`
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Category Card Select ───────────────────────────────────────────── */
+function CategoryOption({ checked, onChange, label, icon }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200 ${
+        checked
+          ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      <span className="text-base">{icon}</span>
+      {label}
+    </button>
   );
 }
 
@@ -349,7 +503,7 @@ function PackageGridCard({ pkg }) {
         )}
 
         {/* ── Actions ─────────────────────────────────────────── */}
-        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 mt-3">
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
           <Link
             to={`/app/packages/${pkg._id}`}
             className="text-sm font-semibold text-green-600 transition hover:text-green-700"
@@ -471,70 +625,108 @@ export default function Packages() {
 
   /* ─── Sidebar Content ─────────────────────────────────────────────── */
   const sidebarContent = (
-    <div className="space-y-0">
+    <div>
       {/* Destination Type */}
-      <FilterSection title="Type Of Destination" collapsed={collapsed.dest} onToggle={() => toggleCollapse('dest')} onClear={destTypes.length ? () => setDestTypes([]) : null}>
-        <div className="flex gap-4">
-          {['domestic', 'international'].map(t => (
-            <CheckboxOption key={t} checked={destTypes.includes(t)} onChange={() => toggleArr(setDestTypes, t)} label={t === 'domestic' ? 'India' : 'International'} />
-          ))}
+      <FilterSection
+        title="Destination"
+        icon={SECTION_ICONS.dest}
+        collapsed={collapsed.dest}
+        onToggle={() => toggleCollapse('dest')}
+        onClear={destTypes.length ? () => setDestTypes([]) : null}
+        activeCount={destTypes.length}
+      >
+        <div className="flex gap-2">
+          <DestPill checked={destTypes.includes('domestic')} onChange={() => toggleArr(setDestTypes, 'domestic')} label="India" icon="🇮🇳" />
+          <DestPill checked={destTypes.includes('international')} onChange={() => toggleArr(setDestTypes, 'international')} label="International" icon="🌍" />
         </div>
       </FilterSection>
 
       {/* Categories */}
-      <FilterSection title="Categories" collapsed={collapsed.cat} onToggle={() => toggleCollapse('cat')} onClear={categories.length ? () => setCategories([]) : null}>
-        {CATEGORIES.map(c => (
-          <CheckboxOption key={c.value} checked={categories.includes(c.value)} onChange={() => toggleArr(setCategories, c.value)} label={c.label} icon={c.icon} />
-        ))}
-      </FilterSection>
-
-      {/* Duration */}
-      <FilterSection title="Duration (in Days)" collapsed={collapsed.dur} onToggle={() => toggleCollapse('dur')} onClear={durationIdx.length ? () => setDurationIdx([]) : null}>
-        <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-          {DURATION_RANGES.map((r, i) => (
-            <CheckboxOption key={i} checked={durationIdx.includes(i)} onChange={() => toggleArr(setDurationIdx, i)} label={r.label} />
+      <FilterSection
+        title="Categories"
+        icon={SECTION_ICONS.cat}
+        collapsed={collapsed.cat}
+        onToggle={() => toggleCollapse('cat')}
+        onClear={categories.length ? () => setCategories([]) : null}
+        activeCount={categories.length}
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {CATEGORIES.map(c => (
+            <CategoryOption key={c.value} checked={categories.includes(c.value)} onChange={() => toggleArr(setCategories, c.value)} label={c.label} icon={c.icon} />
           ))}
         </div>
       </FilterSection>
 
+      {/* Duration */}
+      <FilterSection
+        title="Duration"
+        icon={SECTION_ICONS.dur}
+        collapsed={collapsed.dur}
+        onToggle={() => toggleCollapse('dur')}
+        onClear={durationIdx.length ? () => setDurationIdx([]) : null}
+        activeCount={durationIdx.length}
+      >
+        <ChipSelect items={DURATION_RANGES} selected={durationIdx} onToggle={(i) => toggleArr(setDurationIdx, i)} color="cyan" />
+      </FilterSection>
+
       {/* Budget */}
-      <FilterSection title="Budget Per Person (in ₹)" collapsed={collapsed.budget} onToggle={() => toggleCollapse('budget')} onClear={budgetIdx.length ? () => setBudgetIdx([]) : null}>
-        {BUDGET_RANGES.map((r, i) => (
-          <CheckboxOption key={i} checked={budgetIdx.includes(i)} onChange={() => toggleArr(setBudgetIdx, i)} label={r.label} />
-        ))}
+      <FilterSection
+        title="Budget / Person"
+        icon={SECTION_ICONS.budget}
+        collapsed={collapsed.budget}
+        onToggle={() => toggleCollapse('budget')}
+        onClear={budgetIdx.length ? () => setBudgetIdx([]) : null}
+        activeCount={budgetIdx.length}
+      >
+        <ChipSelect items={BUDGET_RANGES} selected={budgetIdx} onToggle={(i) => toggleArr(setBudgetIdx, i)} color="emerald" />
       </FilterSection>
 
       {/* Hotel Star Rating */}
-      <FilterSection title="Hotel Star Rating" collapsed={collapsed.hotel} onToggle={() => toggleCollapse('hotel')} onClear={hotelStars.length ? () => setHotelStars([]) : null}>
-        {HOTEL_STARS.map(s => (
-          <CheckboxOption
-            key={s}
-            checked={hotelStars.includes(s)}
-            onChange={() => toggleArr(setHotelStars, s)}
-            label={
-              <span className="flex items-center gap-1">
-                {[...Array(s)].map((_, i) => (
-                  <svg key={i} className="h-3.5 w-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                ))}
-                <span className="ml-1 text-slate-600">{s} Star</span>
-              </span>
-            }
-          />
-        ))}
+      <FilterSection
+        title="Hotel Rating"
+        icon={SECTION_ICONS.hotel}
+        collapsed={collapsed.hotel}
+        onToggle={() => toggleCollapse('hotel')}
+        onClear={hotelStars.length ? () => setHotelStars([]) : null}
+        activeCount={hotelStars.length}
+      >
+        <div className="space-y-1.5">
+          {HOTEL_STARS.map(s => (
+            <StarRatingOption key={s} stars={s} checked={hotelStars.includes(s)} onChange={() => toggleArr(setHotelStars, s)} />
+          ))}
+        </div>
       </FilterSection>
 
       {/* Inclusions */}
-      <FilterSection title="Inclusions" collapsed={collapsed.inc} onToggle={() => toggleCollapse('inc')} onClear={inclusions.length ? () => setInclusions([]) : null}>
-        {INCLUSIONS.map(inc => (
-          <CheckboxOption key={inc.value} checked={inclusions.includes(inc.value)} onChange={() => toggleArr(setInclusions, inc.value)} label={inc.label} icon={inc.icon} />
-        ))}
+      <FilterSection
+        title="Inclusions"
+        icon={SECTION_ICONS.inc}
+        collapsed={collapsed.inc}
+        onToggle={() => toggleCollapse('inc')}
+        onClear={inclusions.length ? () => setInclusions([]) : null}
+        activeCount={inclusions.length}
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {INCLUSIONS.map(inc => (
+            <PillToggle key={inc.value} checked={inclusions.includes(inc.value)} onChange={() => toggleArr(setInclusions, inc.value)} label={inc.label} icon={inc.icon} />
+          ))}
+        </div>
       </FilterSection>
 
       {/* Activities / Themes */}
-      <FilterSection title="Activities" collapsed={collapsed.act} onToggle={() => toggleCollapse('act')} onClear={activities.length ? () => setActivities([]) : null}>
-        {ACTIVITIES.map(a => (
-          <CheckboxOption key={a.value} checked={activities.includes(a.value)} onChange={() => toggleArr(setActivities, a.value)} label={a.label} icon={a.icon} />
-        ))}
+      <FilterSection
+        title="Activities"
+        icon={SECTION_ICONS.act}
+        collapsed={collapsed.act}
+        onToggle={() => toggleCollapse('act')}
+        onClear={activities.length ? () => setActivities([]) : null}
+        activeCount={activities.length}
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {ACTIVITIES.map(a => (
+            <PillToggle key={a.value} checked={activities.includes(a.value)} onChange={() => toggleArr(setActivities, a.value)} label={a.label} icon={a.icon} />
+          ))}
+        </div>
       </FilterSection>
     </div>
   );
@@ -564,14 +756,30 @@ export default function Packages() {
 
       <div className="flex gap-6">
         {/* ─── Desktop Sidebar ─────────────────────────────────────────── */}
-        <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Filters</h2>
+        <aside className="hidden lg:block w-72 flex-shrink-0">
+          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-md p-5 shadow-glass scrollbar-hide">
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between pb-3 mb-1">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-sm">
+                  <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-800">Filters</h2>
+                  {activeFilterCount > 0 && (
+                    <p className="text-[10px] text-slate-400 font-medium">{activeFilterCount} active</p>
+                  )}
+                </div>
+              </div>
               {activeFilterCount > 0 && (
-                <button onClick={clearAll} className="text-xs font-medium text-orange-500 hover:text-orange-600 uppercase">Reset</button>
+                <button onClick={clearAll} className="rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
+                  Reset All
+                </button>
               )}
             </div>
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
             {sidebarContent}
           </div>
         </aside>
@@ -588,71 +796,94 @@ export default function Packages() {
               {/* Mobile filter button */}
               <button
                 onClick={() => setMobileFilters(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 lg:hidden"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-sm px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:shadow-md hover:border-cyan-300 transition-all lg:hidden"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                <svg className="h-4 w-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
                 Filters
-                {activeFilterCount > 0 && <span className="rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{activeFilterCount}</span>}
+                {activeFilterCount > 0 && (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-1.5 text-[10px] font-bold text-white">
+                    {activeFilterCount}
+                  </span>
+                )}
               </button>
             </div>
 
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="focus-ring rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm"
-            >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={sort}
+                onChange={e => setSort(e.target.value)}
+                className="focus-ring appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-8 py-2.5 text-sm font-medium text-slate-700 shadow-sm cursor-pointer"
+              >
+                {SORT_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+              <svg className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
           {/* Active filter pills */}
           {activeFilterCount > 0 && (
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-xs font-medium text-slate-400 uppercase tracking-wide">Active:</span>
               {destTypes.map(t => (
-                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2.5 py-1 text-xs font-medium text-orange-700">
+                <span key={t} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-cyan-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">{t === 'domestic' ? '🇮🇳' : '🌍'}</span>
                   {t === 'domestic' ? 'India' : 'International'}
-                  <button onClick={() => toggleArr(setDestTypes, t)} className="hover:text-orange-900">×</button>
+                  <button onClick={() => toggleArr(setDestTypes, t)} className="flex h-4 w-4 items-center justify-center rounded-full bg-cyan-200/60 text-cyan-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
               {categories.map(c => (
-                <span key={c} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700">
+                <span key={c} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-blue-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">{CATEGORIES.find(x => x.value === c)?.icon}</span>
                   {CATEGORIES.find(x => x.value === c)?.label || c}
-                  <button onClick={() => toggleArr(setCategories, c)} className="hover:text-blue-900">×</button>
+                  <button onClick={() => toggleArr(setCategories, c)} className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-200/60 text-blue-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
               {durationIdx.map(i => (
-                <span key={`d${i}`} className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2.5 py-1 text-xs font-medium text-purple-700">
+                <span key={`d${i}`} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-purple-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-purple-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">⏱</span>
                   {DURATION_RANGES[i].label}
-                  <button onClick={() => toggleArr(setDurationIdx, i)} className="hover:text-purple-900">×</button>
+                  <button onClick={() => toggleArr(setDurationIdx, i)} className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-200/60 text-purple-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
               {budgetIdx.map(i => (
-                <span key={`b${i}`} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                <span key={`b${i}`} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-emerald-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">💰</span>
                   {BUDGET_RANGES[i].label}
-                  <button onClick={() => toggleArr(setBudgetIdx, i)} className="hover:text-emerald-900">×</button>
+                  <button onClick={() => toggleArr(setBudgetIdx, i)} className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-200/60 text-emerald-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
               {hotelStars.map(s => (
-                <span key={`h${s}`} className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-700">
+                <span key={`h${s}`} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-amber-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">⭐</span>
                   {s} Star
-                  <button onClick={() => toggleArr(setHotelStars, s)} className="hover:text-amber-900">×</button>
+                  <button onClick={() => toggleArr(setHotelStars, s)} className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-200/60 text-amber-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
               {inclusions.map(inc => (
-                <span key={inc} className="inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 px-2.5 py-1 text-xs font-medium text-teal-700">
+                <span key={inc} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-teal-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">{INCLUSIONS.find(x => x.value === inc)?.icon}</span>
                   {INCLUSIONS.find(x => x.value === inc)?.label || inc}
-                  <button onClick={() => toggleArr(setInclusions, inc)} className="hover:text-teal-900">×</button>
+                  <button onClick={() => toggleArr(setInclusions, inc)} className="flex h-4 w-4 items-center justify-center rounded-full bg-teal-200/60 text-teal-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
               {activities.map(a => (
-                <span key={a} className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-700">
+                <span key={a} className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 pl-2.5 pr-1.5 py-1 text-xs font-semibold text-rose-700 shadow-sm transition-all hover:shadow-md">
+                  <span className="text-sm">{ACTIVITIES.find(x => x.value === a)?.icon}</span>
                   {ACTIVITIES.find(x => x.value === a)?.label || a}
-                  <button onClick={() => toggleArr(setActivities, a)} className="hover:text-rose-900">×</button>
+                  <button onClick={() => toggleArr(setActivities, a)} className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-200/60 text-rose-600 hover:bg-red-200 hover:text-red-600 transition-colors">×</button>
                 </span>
               ))}
-              <button onClick={clearAll} className="text-xs font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Clear All</button>
+              <button onClick={clearAll} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                Clear All
+              </button>
             </div>
           )}
 
@@ -733,24 +964,44 @@ export default function Packages() {
       {/* ─── Mobile Filter Drawer ──────────────────────────────────────── */}
       {mobileFilters && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setMobileFilters(false)} />
-          <div className="relative ml-auto w-80 max-w-full bg-white shadow-xl overflow-y-auto">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Filters</h2>
-              <div className="flex items-center gap-3">
-                {activeFilterCount > 0 && (
-                  <button onClick={clearAll} className="text-xs font-medium text-orange-500 uppercase">Reset</button>
-                )}
-                <button onClick={() => setMobileFilters(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setMobileFilters(false)} />
+          <div className="relative ml-auto w-[85%] max-w-sm bg-white/95 backdrop-blur-md shadow-2xl overflow-y-auto animate-slide-in-right">
+            {/* Drawer Header */}
+            <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur-md px-5 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500">
+                    <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-800">Filters</h2>
+                    {activeFilterCount > 0 && (
+                      <p className="text-[10px] text-slate-400 font-medium">{activeFilterCount} active</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {activeFilterCount > 0 && (
+                    <button onClick={clearAll} className="rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
+                      Reset
+                    </button>
+                  )}
+                  <button onClick={() => setMobileFilters(false)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="px-4 pb-20">
+
+            <div className="px-5 pb-28">
               {sidebarContent}
             </div>
-            <div className="sticky bottom-0 border-t border-slate-100 bg-white p-4">
-              <button onClick={() => setMobileFilters(false)} className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25">
+
+            {/* Drawer Footer */}
+            <div className="sticky bottom-0 border-t border-slate-100 bg-white/95 backdrop-blur-md p-4">
+              <button onClick={() => setMobileFilters(false)} className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/25 transition-all hover:shadow-xl hover:from-cyan-600 hover:to-blue-600 active:scale-[0.98]">
                 Show {total} Packages
               </button>
             </div>
