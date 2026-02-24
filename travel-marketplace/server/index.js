@@ -14,7 +14,6 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const payoutRoutes = require('./routes/payoutRoutes');
-const { startPayoutJob } = require('./jobs/payoutJob');
 const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
@@ -36,35 +35,30 @@ const uploadsDir = process.env.VERCEL
 
 fs.mkdirSync(uploadsDir, { recursive: true });
 
-// Validate required environment variables
+// Validate required environment variables (warn instead of crash for serverless)
 if (!process.env.JWT_SECRET) {
-  console.error('ERROR: JWT_SECRET is not set in environment variables');
-  process.exit(1);
+  console.error('WARNING: JWT_SECRET is not set in environment variables');
 }
-
 if (!process.env.MONGO_URI) {
-  console.error('ERROR: MONGO_URI is not set in environment variables');
-  process.exit(1);
+  console.error('WARNING: MONGO_URI is not set in environment variables');
 }
 
-connectDB();
-
-// Configure CORS before other middleware
-app.use(cors({ 
-  origin: process.env.CLIENT_ORIGIN || ['http://localhost:5173', 'http://127.0.0.1:5173'], 
+// Configure CORS first — preflight requests must not need DB
+const corsOptions = {
+  origin: process.env.CLIENT_ORIGIN
+    ? process.env.CLIENT_ORIGIN.split(',').map((s) => s.trim())
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Set-Cookie']
-}));
-
-// Handle preflight requests
-app.options('*', cors());
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for development
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
-  // Allow image resources to be embedded when frontend and backend run on different origins.
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(requestLogger);
@@ -72,6 +66,21 @@ app.use(rateLimiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(uploadsDir));
+
+// Ensure DB is connected before each request (serverless-safe)
+let dbConnected = false;
+app.use(async (req, res, next) => {
+  try {
+    if (!dbConnected) {
+      await connectDB();
+      dbConnected = true;
+    }
+    next();
+  } catch (err) {
+    console.error('DB connection middleware error:', err.message);
+    res.status(503).json({ message: 'Database connection failed. Please try again.' });
+  }
+});
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRoutes);
@@ -101,10 +110,17 @@ module.exports = app;
 
 // Only listen when running directly (not on Vercel)
 if (!process.env.VERCEL) {
+  // Connect DB eagerly when running as a long-lived server
+  connectDB().catch((err) => {
+    console.error('Initial DB connection failed:', err.message);
+    process.exit(1);
+  });
+
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
   // Start scheduled jobs (only in non-test/non-serverless environments)
   if (process.env.NODE_ENV !== 'test') {
+    const { startPayoutJob } = require('./jobs/payoutJob');
     startPayoutJob();
   }
 }
