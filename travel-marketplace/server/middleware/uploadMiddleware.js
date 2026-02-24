@@ -2,8 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
-const packageUploadDir = path.join(__dirname, '..', 'uploads', 'packages');
-const bannerUploadDir = path.join(__dirname, '..', 'uploads', 'banners');
+// On Vercel (serverless), use /tmp for writable storage
+const baseUploadDir = process.env.VERCEL
+  ? path.join('/tmp', 'uploads')
+  : path.join(__dirname, '..', 'uploads');
+const packageUploadDir = path.join(baseUploadDir, 'packages');
+const bannerUploadDir = path.join(baseUploadDir, 'banners');
 fs.mkdirSync(packageUploadDir, { recursive: true });
 fs.mkdirSync(bannerUploadDir, { recursive: true });
 

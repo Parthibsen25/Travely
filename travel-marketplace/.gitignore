@@ -1,8 +1,11 @@
 node_modules/
 dist/
 .env
+.env.local
+.env.*.local
 *.log
 .DS_Store
+.vercel
 
 # client
 travel-marketplace/client/node_modules/
@@ -10,4 +13,8 @@ travel-marketplace/client/dist/
 
 # server
 travel-marketplace/server/node_modules/
+travel-marketplace/server/uploads/packages/*
+travel-marketplace/server/uploads/banners/*
+!travel-marketplace/server/uploads/packages/.gitkeep
+!travel-marketplace/server/uploads/banners/.gitkeep
 

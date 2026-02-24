@@ -28,7 +28,11 @@ const cartRoutes = require('./routes/cartRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const uploadsDir = path.join(__dirname, 'uploads');
+
+// On Vercel (serverless), use /tmp for writable storage; locally use ./uploads
+const uploadsDir = process.env.VERCEL
+  ? path.join('/tmp', 'uploads')
+  : path.join(__dirname, 'uploads');
 
 fs.mkdirSync(uploadsDir, { recursive: true });
 
@@ -92,9 +96,15 @@ app.use('/api/cart', cartRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Export for Vercel serverless deployment
+module.exports = app;
 
-// Start scheduled jobs (only in non-test environments)
-if (process.env.NODE_ENV !== 'test') {
-  startPayoutJob();
+// Only listen when running directly (not on Vercel)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+  // Start scheduled jobs (only in non-test/non-serverless environments)
+  if (process.env.NODE_ENV !== 'test') {
+    startPayoutJob();
+  }
 }
