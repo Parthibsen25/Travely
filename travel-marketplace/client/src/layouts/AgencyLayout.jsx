@@ -27,6 +27,7 @@ export default function AgencyLayout() {
 
   const navLinks = [
     { to: '/agency/dashboard', label: 'Dashboard' },
+    { to: '/agency/packages', label: 'Packages' },
     { to: '/agency/bookings', label: 'Bookings' },
     { to: '/agency/coupons', label: 'Coupons' },
     { to: '/agency/requests', label: 'Requests' },

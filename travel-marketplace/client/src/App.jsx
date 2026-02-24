@@ -28,6 +28,7 @@ import Profile from './pages/Profile';
 import PlanTrip from './pages/PlanTrip';
 
 import AgencyDashboard from './pages/AgencyDashboard';
+import AgencyPackages from './pages/AgencyPackages';
 import AgencyBookings from './pages/AgencyBookings';
 import AgencyPayouts from './pages/AgencyPayouts';
 import AgencyCoupons from './pages/AgencyCoupons';
@@ -130,6 +131,7 @@ export default function App() {
         <Route path="/agency" element={<AgencyLayout />}>
           <Route index element={<Navigate to="/agency/dashboard" replace />} />
           <Route path="dashboard" element={<AgencyDashboard />} />
+          <Route path="packages" element={<AgencyPackages />} />
           <Route path="bookings" element={<AgencyBookings />} />
           <Route path="coupons" element={<AgencyCoupons />} />
           <Route path="requests" element={<AgencyRequests />} />
