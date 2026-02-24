@@ -1,7 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
-const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -27,13 +26,6 @@ const cartRoutes = require('./routes/cartRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-
-// On Vercel (serverless), use /tmp for writable storage; locally use ./uploads
-const uploadsDir = process.env.VERCEL
-  ? path.join('/tmp', 'uploads')
-  : path.join(__dirname, 'uploads');
-
-fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Validate required environment variables (warn instead of crash for serverless)
 if (!process.env.JWT_SECRET) {
@@ -65,7 +57,6 @@ app.use(requestLogger);
 app.use(rateLimiter);
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(uploadsDir));
 
 // Ensure DB is connected before each request (serverless-safe)
 let dbConnected = false;

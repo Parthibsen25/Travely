@@ -1,31 +1,6 @@
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
-
-// On Vercel (serverless), use /tmp for writable storage
-const baseUploadDir = process.env.VERCEL
-  ? path.join('/tmp', 'uploads')
-  : path.join(__dirname, '..', 'uploads');
-const packageUploadDir = path.join(baseUploadDir, 'packages');
-const bannerUploadDir = path.join(baseUploadDir, 'banners');
-fs.mkdirSync(packageUploadDir, { recursive: true });
-fs.mkdirSync(bannerUploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, packageUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    const baseName = path
-      .basename(file.originalname || 'image', ext)
-      .replace(/[^a-zA-Z0-9_-]/g, '-')
-      .slice(0, 48);
-    const safeName = baseName || 'image';
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${safeName}${ext}`);
-  }
-});
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
 const fileFilter = (req, file, cb) => {
   if (!file.mimetype || !file.mimetype.startsWith('image/')) {
@@ -36,26 +11,39 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const uploadPackageImage = multer({
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024
+// Cloudinary storage for package images
+const packageStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'travely/packages',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif'],
+    transformation: [{ width: 1200, height: 800, crop: 'limit', quality: 'auto' }],
   },
-  fileFilter
+});
+
+// Cloudinary storage for banner images
+const bannerStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'travely/banners',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif'],
+    transformation: [{ width: 1920, height: 600, crop: 'limit', quality: 'auto' }],
+  },
+});
+
+const uploadPackageImage = multer({
+  storage: packageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter,
+});
+
+const uploadBannerImage = multer({
+  storage: bannerStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter,
 });
 
 module.exports = {
   uploadPackageImage,
-  uploadBannerImage: multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => cb(null, bannerUploadDir),
-      filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname || '').toLowerCase();
-        const baseName = path.basename(file.originalname || 'banner', ext).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48) || 'banner';
-        cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${baseName}${ext}`);
-      }
-    }),
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter
-  }),
+  uploadBannerImage,
 };

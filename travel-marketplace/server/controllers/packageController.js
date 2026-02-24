@@ -226,9 +226,10 @@ exports.uploadPackageImage = async (req, res) => {
       return res.status(400).json({ message: 'Image file is required' });
     }
 
-    const imagePath = `/uploads/packages/${req.file.filename}`;
+    // Cloudinary stores the URL in req.file.path
+    const imageUrl = req.file.path;
 
-    res.status(201).json({ imageUrl: imagePath, imagePath });
+    res.status(201).json({ imageUrl, imagePath: imageUrl });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

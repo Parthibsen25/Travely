@@ -32,7 +32,8 @@ exports.createBanner = async (req, res) => {
     if (!title) return res.status(400).json({ message: 'title is required' });
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
-    const imageUrl = `/uploads/banners/${req.file.filename}`;
+    // Cloudinary stores the URL in req.file.path
+    const imageUrl = req.file.path;
 
     const banner = await Banner.create({
       title,
@@ -66,7 +67,7 @@ exports.updateBanner = async (req, res) => {
     if (isActive !== undefined) banner.isActive = isActive === true || isActive === 'true';
     if (style) banner.style = style;
     if (gradient !== undefined) banner.gradient = gradient;
-    if (req.file) banner.imageUrl = `/uploads/banners/${req.file.filename}`;
+    if (req.file) banner.imageUrl = req.file.path;
 
     await banner.save();
     res.json({ banner });
