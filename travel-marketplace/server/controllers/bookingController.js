@@ -2,10 +2,12 @@ const Booking = require('../models/Booking');
 const Package = require('../models/Package');
 const Offer = require('../models/Offer');
 const Coupon = require('../models/Coupon');
+const Cart = require('../models/Cart');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const { computeFinalPrice } = require('../services/pricingService');
 const { computeCancellation } = require('../services/cancellationService');
+const { updateAgencyGMV } = require('../services/commissionService');
 
 exports.createBooking = async (req, res) => {
   try {
@@ -104,6 +106,14 @@ exports.createBooking = async (req, res) => {
       });
     } catch (_) { /* non-critical */ }
 
+    // ── Remove booked package from cart ──
+    try {
+      await Cart.updateOne(
+        { userId },
+        { $pull: { items: { packageId } } }
+      );
+    } catch (_) { /* non-critical */ }
+
     res.status(201).json({
       bookingId: booking._id,
       message: 'Booking created (payments disabled in this environment).',
@@ -188,8 +198,8 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
-// Confirm booking (since payments are disabled, allow direct confirmation)
-exports.confirmBooking = async (req, res) => {
+// ── Simulate Payment (User pays — PENDING_PAYMENT → PAID) ──
+exports.payBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const userId = req.user.id;
@@ -199,19 +209,141 @@ exports.confirmBooking = async (req, res) => {
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    // only owner or admin
+    // only booking owner or admin
     if (req.user.role !== 'ADMIN' && booking.userId.toString() !== userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
     if (booking.status !== 'PENDING_PAYMENT') {
-      return res.status(400).json({ message: `Cannot confirm booking in ${booking.status} status` });
+      return res.status(400).json({ message: `Cannot pay for booking in ${booking.status} status` });
+    }
+
+    // Simulate payment (no real payment gateway)
+    booking.status = 'PAID';
+    booking.paidAt = new Date();
+    booking.paymentId = `SIM_${Date.now()}_${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    await booking.save();
+
+    // ── Notify agency about payment received ──
+    try {
+      const pkg = await Package.findById(booking.packageId).select('agencyId title').lean();
+      if (pkg) {
+        await Notification.create({
+          recipientId: pkg.agencyId,
+          recipientRole: 'AGENCY',
+          type: 'BOOKING_CREATED',
+          title: 'Payment Received!',
+          message: `Payment of ₹${booking.finalAmount.toLocaleString()} received for "${pkg.title}". Please confirm the booking.`,
+          referenceId: booking._id,
+          referenceModel: 'Booking',
+        });
+      }
+    } catch (_) { /* non-critical */ }
+
+    return res.json({ message: 'Payment simulated successfully. Awaiting agency confirmation.', booking });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Confirm Booking (Agency confirms — PAID → CONFIRMED) ──
+exports.confirmBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ message: 'Invalid booking id' });
+    }
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    // Only agency that owns the package or admin can confirm
+    const pkg = await Package.findById(booking.packageId).select('agencyId title').lean();
+    const isAgencyOwner = req.user.role === 'AGENCY' && pkg && pkg.agencyId.toString() === req.user.id;
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!isAgencyOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Only the package agency or admin can confirm bookings.' });
+    }
+
+    if (booking.status !== 'PAID') {
+      return res.status(400).json({ message: `Cannot confirm booking in ${booking.status} status. Payment must be completed first.` });
     }
 
     booking.status = 'CONFIRMED';
     booking.confirmedAt = new Date();
     await booking.save();
+
+    // ── Track agency GMV and auto-upgrade tier ──
+    try {
+      if (pkg && pkg.agencyId) {
+        await updateAgencyGMV(pkg.agencyId, booking.finalAmount);
+      }
+    } catch (gmvErr) {
+      console.error('GMV tracking error (non-critical):', gmvErr.message);
+    }
+
+    // ── Notify user about booking confirmation ──
+    try {
+      await Notification.create({
+        recipientId: booking.userId,
+        recipientRole: 'USER',
+        type: 'BOOKING_CREATED',
+        title: 'Booking Confirmed!',
+        message: `Your booking for "${pkg?.title || 'trip'}" has been confirmed by the agency. Get ready for your adventure!`,
+        referenceId: booking._id,
+        referenceModel: 'Booking',
+      });
+    } catch (_) { /* non-critical */ }
+
     return res.json({ message: 'Booking confirmed successfully.', booking });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Complete Booking (Agency marks trip as completed — CONFIRMED → COMPLETED) ──
+exports.completeBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ message: 'Invalid booking id' });
+    }
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    // Only agency that owns the package or admin can complete
+    const pkg = await Package.findById(booking.packageId).select('agencyId title').lean();
+    const isAgencyOwner = req.user.role === 'AGENCY' && pkg && pkg.agencyId.toString() === req.user.id;
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!isAgencyOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Only the package agency or admin can mark bookings as completed.' });
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      return res.status(400).json({ message: `Cannot complete booking in ${booking.status} status. Must be confirmed first.` });
+    }
+
+    booking.status = 'COMPLETED';
+    booking.completedAt = new Date();
+    await booking.save();
+
+    // ── Notify user ──
+    try {
+      await Notification.create({
+        recipientId: booking.userId,
+        recipientRole: 'USER',
+        type: 'BOOKING_CREATED',
+        title: 'Trip Completed!',
+        message: `Your trip "${pkg?.title || ''}" has been marked as completed. We hope you had an amazing experience! Don't forget to leave a review.`,
+        referenceId: booking._id,
+        referenceModel: 'Booking',
+      });
+    } catch (_) { /* non-critical */ }
+
+    return res.json({ message: 'Booking marked as completed.', booking });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

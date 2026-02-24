@@ -1,13 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 import Loading from '../components/Loading';
 import Modal from '../components/Modal';
 
 const STATUS_COLORS = {
   PENDING_PAYMENT: 'bg-amber-100 text-amber-700 border-amber-200',
+  PAID: 'bg-blue-100 text-blue-700 border-blue-200',
   CONFIRMED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   CANCELLED: 'bg-red-100 text-red-700 border-red-200',
-  COMPLETED: 'bg-blue-100 text-blue-700 border-blue-200',
+  COMPLETED: 'bg-indigo-100 text-indigo-700 border-indigo-200',
   REFUND_INITIATED: 'bg-purple-100 text-purple-700 border-purple-200',
   REFUNDED: 'bg-slate-100 text-slate-700 border-slate-200',
   DISPUTED: 'bg-orange-100 text-orange-700 border-orange-200',
@@ -15,6 +17,7 @@ const STATUS_COLORS = {
 
 const STATUS_LABELS = {
   PENDING_PAYMENT: 'Pending Payment',
+  PAID: 'Paid — Awaiting Confirmation',
   CONFIRMED: 'Confirmed',
   CANCELLED: 'Cancelled',
   COMPLETED: 'Completed',
@@ -41,32 +44,62 @@ export default function AgencyBookings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [sortKey, setSortKey] = useState('date-desc');
+  const [busyId, setBusyId] = useState('');
+  const { showToast } = useToast();
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      const data = await apiFetch('/api/bookings/agency');
+      setBookings(data.bookings || []);
+    } catch (err) {
+      setError(err.message || 'Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let ignore = false;
-    async function load() {
-      try {
-        const data = await apiFetch('/api/bookings/agency');
-        if (!ignore) setBookings(data.bookings || []);
-      } catch (err) {
-        if (!ignore) setError(err.message || 'Failed to load bookings');
-      } finally {
-        if (!ignore) setLoading(false);
-      }
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const handleConfirm = async (bookingId, e) => {
+    e?.stopPropagation();
+    setBusyId(bookingId);
+    try {
+      await apiFetch(`/api/bookings/${bookingId}/confirm`, { method: 'POST' });
+      showToast('Booking confirmed!', 'success');
+      await fetchBookings();
+    } catch (err) {
+      showToast(err.message || 'Failed to confirm booking', 'error');
+    } finally {
+      setBusyId('');
     }
-    load();
-    return () => { ignore = true; };
-  }, []);
+  };
+
+  const handleComplete = async (bookingId, e) => {
+    e?.stopPropagation();
+    setBusyId(bookingId);
+    try {
+      await apiFetch(`/api/bookings/${bookingId}/complete`, { method: 'POST' });
+      showToast('Booking marked as completed!', 'success');
+      await fetchBookings();
+    } catch (err) {
+      showToast(err.message || 'Failed to complete booking', 'error');
+    } finally {
+      setBusyId('');
+    }
+  };
 
   const stats = useMemo(() => {
     const total = bookings.length;
     const confirmed = bookings.filter((b) => b.status === 'CONFIRMED').length;
+    const paid = bookings.filter((b) => b.status === 'PAID').length;
     const pending = bookings.filter((b) => b.status === 'PENDING_PAYMENT').length;
     const cancelled = bookings.filter((b) => b.status === 'CANCELLED').length;
     const totalRevenue = bookings
       .filter((b) => b.status === 'CONFIRMED' || b.status === 'COMPLETED')
       .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
-    return { total, confirmed, pending, cancelled, totalRevenue };
+    return { total, confirmed, paid, pending, cancelled, totalRevenue };
   }, [bookings]);
 
   const filtered = useMemo(() => {
@@ -117,10 +150,14 @@ export default function AgencyBookings() {
       </header>
 
       {/* Stats */}
-      <section className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <section className="grid grid-cols-2 gap-4 sm:grid-cols-6">
         <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm text-center">
           <p className="text-sm font-medium text-slate-500">Total</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</p>
+        </div>
+        <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm text-center">
+          <p className="text-sm font-medium text-blue-600">Paid</p>
+          <p className="mt-1 text-2xl font-bold text-blue-700">{stats.paid}</p>
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm text-center">
           <p className="text-sm font-medium text-emerald-600">Confirmed</p>
@@ -134,9 +171,9 @@ export default function AgencyBookings() {
           <p className="text-sm font-medium text-red-600">Cancelled</p>
           <p className="mt-1 text-2xl font-bold text-red-700">{stats.cancelled}</p>
         </div>
-        <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm text-center">
-          <p className="text-sm font-medium text-blue-600">Revenue</p>
-          <p className="mt-1 text-2xl font-bold text-blue-700">{formatCurrency(stats.totalRevenue)}</p>
+        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm text-center">
+          <p className="text-sm font-medium text-indigo-600">Revenue</p>
+          <p className="mt-1 text-2xl font-bold text-indigo-700">{formatCurrency(stats.totalRevenue)}</p>
         </div>
       </section>
 
@@ -156,6 +193,7 @@ export default function AgencyBookings() {
         >
           <option value="ALL">All Statuses</option>
           <option value="PENDING_PAYMENT">Pending Payment</option>
+          <option value="PAID">Paid — Awaiting Confirmation</option>
           <option value="CONFIRMED">Confirmed</option>
           <option value="CANCELLED">Cancelled</option>
           <option value="COMPLETED">Completed</option>
@@ -219,10 +257,32 @@ export default function AgencyBookings() {
                   Booked on {formatDate(booking.createdAt)} &middot; ID: {booking._id?.slice(-8)}
                 </p>
               </div>
-              <div className="text-right shrink-0">
+              <div className="text-right shrink-0 flex flex-col items-end gap-2">
                 <p className="text-lg font-bold text-slate-900">{formatCurrency(booking.finalAmount)}</p>
                 {booking.discountApplied > 0 && (
                   <p className="text-xs text-emerald-600">Discount: {formatCurrency(booking.discountApplied)}</p>
+                )}
+                {booking.status === 'PAID' && (
+                  <button
+                    type="button"
+                    disabled={busyId === booking._id}
+                    onClick={(e) => handleConfirm(booking._id, e)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    {busyId === booking._id ? 'Confirming…' : 'Confirm Booking'}
+                  </button>
+                )}
+                {booking.status === 'CONFIRMED' && (
+                  <button
+                    type="button"
+                    disabled={busyId === booking._id}
+                    onClick={(e) => handleComplete(booking._id, e)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {busyId === booking._id ? 'Completing…' : 'Mark Complete'}
+                  </button>
                 )}
               </div>
             </div>
@@ -287,6 +347,18 @@ export default function AgencyBookings() {
                     <p className="font-semibold text-emerald-700 mt-0.5">{formatDate(selectedBooking.confirmedAt)}</p>
                   </div>
                 )}
+                {selectedBooking.paidAt && (
+                  <div>
+                    <span className="text-slate-500">Paid At</span>
+                    <p className="font-semibold text-blue-700 mt-0.5">{formatDate(selectedBooking.paidAt)}</p>
+                  </div>
+                )}
+                {selectedBooking.completedAt && (
+                  <div>
+                    <span className="text-slate-500">Completed At</span>
+                    <p className="font-semibold text-indigo-700 mt-0.5">{formatDate(selectedBooking.completedAt)}</p>
+                  </div>
+                )}
                 {selectedBooking.cancelledAt && (
                   <div>
                     <span className="text-slate-500">Cancelled At</span>
@@ -328,6 +400,36 @@ export default function AgencyBookings() {
                 )}
               </div>
             </div>
+
+            {/* Action Buttons */}
+            {selectedBooking.status === 'PAID' && (
+              <button
+                type="button"
+                disabled={busyId === selectedBooking._id}
+                onClick={() => {
+                  handleConfirm(selectedBooking._id);
+                  setSelectedBooking(null);
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                {busyId === selectedBooking._id ? 'Confirming…' : 'Confirm This Booking'}
+              </button>
+            )}
+            {selectedBooking.status === 'CONFIRMED' && (
+              <button
+                type="button"
+                disabled={busyId === selectedBooking._id}
+                onClick={() => {
+                  handleComplete(selectedBooking._id);
+                  setSelectedBooking(null);
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {busyId === selectedBooking._id ? 'Completing…' : 'Mark Trip as Completed'}
+              </button>
+            )}
           </div>
         )}
       </Modal>

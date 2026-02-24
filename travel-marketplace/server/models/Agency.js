@@ -11,7 +11,22 @@ const AgencySchema = new mongoose.Schema(
       enum: ['PENDING', 'VERIFIED', 'REJECTED'],
       default: 'PENDING'
     },
-    commissionTier: { type: String, default: 'STANDARD' },
+    commissionTier: {
+      type: String,
+      enum: ['STARTER', 'GROWTH', 'PROFESSIONAL', 'ENTERPRISE'],
+      default: 'STARTER'
+    },
+    lifetimeGMV: { type: Number, default: 0 },
+    quarterlyGMV: { type: Number, default: 0 },
+    quarterlyGMVResetAt: { type: Date },
+    bankDetails: {
+      accountHolder: { type: String },
+      accountNumber: { type: String },
+      ifscCode: { type: String },
+      bankName: { type: String }
+    },
+    gstNumber: { type: String },
+    panNumber: { type: String },
     isSuspended: { type: Boolean, default: false }
   },
   { timestamps: true }

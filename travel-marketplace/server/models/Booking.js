@@ -12,7 +12,7 @@ const BookingSchema = new mongoose.Schema(
     amountMode: { type: String, enum: ['PER_PERSON', 'TOTAL'], default: 'TOTAL' },
     status: {
       type: String,
-      enum: ['PENDING_PAYMENT','CONFIRMED','CANCELLED','COMPLETED','REFUND_INITIATED','REFUNDED','DISPUTED'],
+      enum: ['PENDING_PAYMENT','PAID','CONFIRMED','CANCELLED','COMPLETED','REFUND_INITIATED','REFUNDED','DISPUTED'],
       default: 'PENDING_PAYMENT'
     },
     couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
@@ -24,7 +24,9 @@ const BookingSchema = new mongoose.Schema(
     refundId: { type: String },
     refundAmount: { type: Number },
     cancelledAt: { type: Date },
-    confirmedAt: { type: Date }
+    paidAt: { type: Date },
+    confirmedAt: { type: Date },
+    completedAt: { type: Date }
   },
   { timestamps: true }
 );

@@ -139,12 +139,12 @@ export default function AdminAnalytics() {
           <StatCard
             icon={<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" /></svg>}
             label="Commission Revenue" value={`₹${(stats.totalCommissionRevenue || 0).toLocaleString()}`}
-            sub="Platform earnings from commissions" color="cyan" delay={0.05}
+            sub={`GST ₹${(stats.totalGSTCollected || 0).toLocaleString()} · TDS ₹${(stats.totalTDSCollected || 0).toLocaleString()}`} color="cyan" delay={0.05}
           />
           <StatCard
             icon={<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
             label="Total Payouts" value={`₹${(stats.totalPayoutAmount || 0).toLocaleString()}`}
-            sub={`${stats.paidPayouts || 0} paid · ${stats.pendingPayouts || 0} pending`} color="violet" delay={0.1}
+            sub={`${stats.completedPayouts || 0} completed · ${stats.scheduledPayouts || 0} scheduled`} color="violet" delay={0.1}
           />
         </div>
       </div>

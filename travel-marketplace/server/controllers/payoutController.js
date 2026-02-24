@@ -3,6 +3,7 @@ const Booking = require('../models/Booking');
 const Package = require('../models/Package');
 const Review = require('../models/Review');
 const Agency = require('../models/Agency');
+const { TIER_CONFIG, getTierConfig, DEDUCTION_RATES } = require('../services/commissionService');
 
 exports.getMyPayouts = async (req, res) => {
   try {
@@ -20,7 +21,9 @@ exports.getAgencyAnalytics = async (req, res) => {
     const agencyId = req.user.id;
 
     // ── Agency info ──
-    const agency = await Agency.findById(agencyId).select('businessName commissionTier verificationStatus createdAt').lean();
+    const agency = await Agency.findById(agencyId)
+      .select('businessName commissionTier verificationStatus createdAt quarterlyGMV lifetimeGMV')
+      .lean();
 
     // ── Package stats ──
     const packages = await Package.find({ agencyId }).lean();
@@ -45,22 +48,46 @@ exports.getAgencyAnalytics = async (req, res) => {
       if (['CONFIRMED', 'COMPLETED'].includes(s._id)) confirmedRevenue += s.revenue;
     });
 
-    // ── Payout stats ──
+    // ── Payout stats (new financial fields) ──
     const payoutAgg = await Payout.aggregate([
       { $match: { agencyId: agency._id } },
-      { $group: { _id: '$status', totalCommission: { $sum: '$commissionDeducted' }, totalPayouts: { $sum: '$payoutAmount' }, totalRevenue: { $sum: '$totalRevenue' }, count: { $sum: 1 } } }
+      {
+        $group: {
+          _id: '$status',
+          totalGross: { $sum: '$grossAmount' },
+          totalCommission: { $sum: '$platformCommission' },
+          totalGST: { $sum: '$gstOnCommission' },
+          totalTDS: { $sum: '$tdsDeducted' },
+          totalGatewayFee: { $sum: '$paymentGatewayFee' },
+          totalDeductions: { $sum: '$totalDeductions' },
+          totalNetPayout: { $sum: '$netPayoutAmount' },
+          count: { $sum: 1 }
+        }
+      }
     ]);
-    let commissionPaid = 0;
-    let netPayout = 0;
-    let payoutRevenue = 0;
-    let pendingPayouts = 0;
-    let paidPayouts = 0;
+    let totalCommissionPaid = 0;
+    let totalGSTPaid = 0;
+    let totalTDSDeducted = 0;
+    let totalGatewayFees = 0;
+    let totalAllDeductions = 0;
+    let netPayoutTotal = 0;
+    let grossPayoutRevenue = 0;
+    let scheduledPayouts = 0;
+    let completedPayouts = 0;
+    let processingPayouts = 0;
+    let failedPayouts = 0;
     payoutAgg.forEach(p => {
-      commissionPaid += p.totalCommission;
-      netPayout += p.totalPayouts;
-      payoutRevenue += p.totalRevenue;
-      if (p._id === 'PENDING') pendingPayouts = p.count;
-      if (p._id === 'PAID') paidPayouts = p.count;
+      totalCommissionPaid += p.totalCommission;
+      totalGSTPaid += p.totalGST;
+      totalTDSDeducted += p.totalTDS;
+      totalGatewayFees += p.totalGatewayFee;
+      totalAllDeductions += p.totalDeductions;
+      netPayoutTotal += p.totalNetPayout;
+      grossPayoutRevenue += p.totalGross;
+      if (p._id === 'SCHEDULED') scheduledPayouts = p.count;
+      if (p._id === 'COMPLETED' || p._id === 'PAID') completedPayouts += p.count;
+      if (p._id === 'PROCESSING') processingPayouts = p.count;
+      if (p._id === 'FAILED') failedPayouts = p.count;
     });
 
     // ── Monthly revenue trend (last 6 months) ──
@@ -102,15 +129,55 @@ exports.getAgencyAnalytics = async (req, res) => {
     // ── Average booking value ──
     const avgBookingValue = totalBookings > 0 ? Math.round(totalRevenue / totalBookings) : 0;
 
-    // ── Commission tier info ──
-    const TIER_RATES = { STANDARD: 8, SILVER: 6, GOLD: 4, PLATINUM: 2 };
-    const commissionRate = TIER_RATES[(agency.commissionTier || 'STANDARD').toUpperCase()] || 8;
+    // ── Commission tier info (from new TIER_CONFIG) ──
+    const tierInfo = getTierConfig(agency.commissionTier || 'STARTER');
+    const commissionRate = tierInfo.rate;
+
+    // ── Estimated commission from confirmed/completed bookings (before payouts are generated) ──
+    const estimatedCommission = Math.round(confirmedRevenue * commissionRate / 100);
+    const estimatedGST = Math.round(estimatedCommission * DEDUCTION_RATES.GST_ON_COMMISSION / 100);
+    const estimatedTDS = Math.round(confirmedRevenue * DEDUCTION_RATES.TDS_PERCENT / 100);
+    const estimatedGateway = Math.round(confirmedRevenue * DEDUCTION_RATES.PAYMENT_GATEWAY_PERCENT / 100);
+    const estimatedTotalDeductions = estimatedCommission + estimatedGST + estimatedTDS + estimatedGateway;
+    const estimatedNetEarnings = Math.round(confirmedRevenue - estimatedTotalDeductions);
 
     res.json({
-      agency: { businessName: agency.businessName, commissionTier: agency.commissionTier, commissionRate, verificationStatus: agency.verificationStatus, memberSince: agency.createdAt },
+      agency: {
+        businessName: agency.businessName,
+        commissionTier: agency.commissionTier || 'STARTER',
+        commissionRate,
+        tierLabel: tierInfo.label,
+        tierDescription: tierInfo.description,
+        settlementCycle: tierInfo.settlementCycle,
+        quarterlyGMV: agency.quarterlyGMV || 0,
+        lifetimeGMV: agency.lifetimeGMV || 0,
+        nextTierGMV: tierInfo.maxQuarterlyGMV === Infinity ? null : tierInfo.maxQuarterlyGMV,
+        verificationStatus: agency.verificationStatus,
+        memberSince: agency.createdAt
+      },
       packages: { total: totalPackages, active: activePackages, inactive: totalPackages - activePackages, avgPrice: avgPackagePrice },
       bookings: { total: totalBookings, byStatus: bookingsByStatus, avgValue: avgBookingValue },
-      earnings: { totalRevenue: Math.round(confirmedRevenue), commissionPaid: Math.round(commissionPaid), netPayout: Math.round(netPayout), pendingPayouts, paidPayouts },
+      earnings: {
+        totalRevenue: Math.round(confirmedRevenue),
+        grossPayoutRevenue: Math.round(grossPayoutRevenue),
+        commissionPaid: Math.round(totalCommissionPaid),
+        gstPaid: Math.round(totalGSTPaid),
+        tdsDeducted: Math.round(totalTDSDeducted),
+        gatewayFees: Math.round(totalGatewayFees),
+        totalDeductions: Math.round(totalAllDeductions),
+        netPayout: Math.round(netPayoutTotal),
+        scheduledPayouts,
+        completedPayouts,
+        processingPayouts,
+        failedPayouts,
+        // Estimated figures from confirmed bookings (shown even before payouts are created)
+        estimatedCommission,
+        estimatedGST,
+        estimatedTDS,
+        estimatedGateway,
+        estimatedTotalDeductions,
+        estimatedNetEarnings
+      },
       reviews: { total: totalReviews, avgRating },
       monthlyRevenue,
       topPackages,

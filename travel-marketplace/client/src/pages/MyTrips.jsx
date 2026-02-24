@@ -15,6 +15,16 @@ const STATUS_CONFIG = {
       </svg>
     ),
   },
+  PAID: {
+    label: 'Paid — Awaiting Confirmation',
+    class: 'bg-blue-50 text-blue-700 border border-blue-200',
+    dot: 'bg-blue-500',
+    icon: (
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+      </svg>
+    ),
+  },
   CONFIRMED: {
     label: 'Confirmed',
     class: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
@@ -69,8 +79,9 @@ const STATUS_CONFIG = {
 
 const FILTER_TABS = [
   { key: 'ALL', label: 'All Trips' },
-  { key: 'CONFIRMED', label: 'Confirmed' },
   { key: 'PENDING_PAYMENT', label: 'Pending' },
+  { key: 'PAID', label: 'Paid' },
+  { key: 'CONFIRMED', label: 'Confirmed' },
   { key: 'COMPLETED', label: 'Completed' },
   { key: 'CANCELLED', label: 'Cancelled' },
 ];
@@ -331,10 +342,10 @@ export default function MyTrips() {
             {filteredBookings.map((booking, index) => {
               const sConfig = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING_PAYMENT;
               const days = daysUntilTrip(booking.travelDate);
-              const isUpcoming = days > 0 && (booking.status === 'CONFIRMED' || booking.status === 'PENDING_PAYMENT');
+              const isUpcoming = days > 0 && ['CONFIRMED', 'PENDING_PAYMENT', 'PAID'].includes(booking.status);
               const isCancelled = booking.status === 'CANCELLED';
               const hasReview = reviewedBookings.has(booking.packageId?._id);
-              const canReview = (booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') && !hasReview;
+              const canReview = booking.status === 'COMPLETED' && !hasReview;
 
               return (
                 <article
@@ -476,20 +487,27 @@ export default function MyTrips() {
                           onClick={async () => {
                             setBusyId(booking._id);
                             try {
-                              await apiFetch(`/api/bookings/${booking._id}/confirm`, { method: 'POST' });
-                              showToast('Booking confirmed!', 'success');
+                              await apiFetch(`/api/bookings/${booking._id}/pay`, { method: 'POST' });
+                              showToast('Payment successful! Awaiting agency confirmation.', 'success');
                               await fetchBookings();
                             } catch (err) {
-                              showToast(err.message || 'Failed to confirm', 'error');
+                              showToast(err.message || 'Payment failed', 'error');
                             } finally {
                               setBusyId('');
                             }
                           }}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md disabled:opacity-50"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-emerald-700 hover:to-green-700 hover:shadow-md disabled:opacity-50"
                         >
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                          {busyId === booking._id ? 'Confirming...' : 'Confirm'}
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                          {busyId === booking._id ? 'Processing...' : `Pay ₹${getBookingAmount(booking, booking.finalAmount).toLocaleString()}`}
                         </button>
+                      )}
+
+                      {booking.status === 'PAID' && (
+                        <div className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-700">
+                          <svg className="h-4 w-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Awaiting Agency Confirmation
+                        </div>
                       )}
 
                       {canReview && (

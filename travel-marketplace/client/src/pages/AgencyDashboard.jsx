@@ -124,7 +124,7 @@ export default function AgencyDashboard() {
             <p className="mt-1 text-sm text-slate-500">
               Member since {agency?.memberSince ? new Date(agency.memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : '—'} &nbsp;·&nbsp;
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                {agency?.commissionTier || 'STANDARD'} Tier · {agency?.commissionRate || 8}% commission
+                {agency?.tierLabel || agency?.commissionTier || 'Starter'} Tier · {agency?.commissionRate || 20}% commission · {agency?.settlementCycle || 'T+14'}
               </span>
             </p>
           </div>
@@ -139,18 +139,18 @@ export default function AgencyDashboard() {
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-          label="Total Revenue" value={`₹${earnings.totalRevenue.toLocaleString()}`}
+          label="Total Revenue" value={`₹${(earnings.totalRevenue || 0).toLocaleString()}`}
           sub="From confirmed bookings" color="emerald" delay={0}
         />
         <StatCard
           icon={<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
-          label="Net Payouts" value={`₹${earnings.netPayout.toLocaleString()}`}
-          sub={`${earnings.paidPayouts} paid · ${earnings.pendingPayouts} pending`} color="cyan" delay={0.05}
+          label="Net Payouts" value={`₹${(earnings.netPayout || earnings.estimatedNetEarnings || 0).toLocaleString()}`}
+          sub={earnings.netPayout ? `${earnings.completedPayouts || 0} paid · ${earnings.scheduledPayouts || 0} scheduled` : 'Estimated — payouts pending'} color="cyan" delay={0.05}
         />
         <StatCard
           icon={<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" /></svg>}
-          label="Commission Paid" value={`₹${earnings.commissionPaid.toLocaleString()}`}
-          sub={`${agency?.commissionRate || 8}% platform fee`} color="rose" delay={0.1}
+          label="Commission" value={`₹${(earnings.commissionPaid || earnings.estimatedCommission || 0).toLocaleString()}`}
+          sub={`${agency?.commissionRate || 20}% platform fee${!earnings.commissionPaid && earnings.estimatedCommission ? ' (est.)' : ''}`} color="rose" delay={0.1}
         />
         <StatCard
           icon={<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
@@ -219,35 +219,80 @@ export default function AgencyDashboard() {
       {/* ── Earnings Breakdown ── */}
       <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white shadow-lg animate-scale-in" style={{ animationDelay: '0.35s' }}>
         <h2 className="text-lg font-bold">Earnings Breakdown</h2>
-        <p className="text-xs text-slate-400 mb-5">Complete financial summary</p>
+        <p className="text-xs text-slate-400 mb-5">Complete financial summary with all deductions</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl bg-white/10 backdrop-blur p-4">
             <p className="text-xs text-slate-300 uppercase tracking-wider">Gross Revenue</p>
-            <p className="mt-1 text-2xl font-bold">₹{earnings.totalRevenue.toLocaleString()}</p>
+            <p className="mt-1 text-2xl font-bold">₹{(earnings.grossPayoutRevenue || earnings.totalRevenue || 0).toLocaleString()}</p>
           </div>
           <div className="rounded-xl bg-white/10 backdrop-blur p-4">
             <p className="text-xs text-slate-300 uppercase tracking-wider">Platform Commission</p>
-            <p className="mt-1 text-2xl font-bold text-rose-400">−₹{earnings.commissionPaid.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{agency?.commissionRate}% of revenue</p>
+            <p className="mt-1 text-2xl font-bold text-rose-400">−₹{(earnings.commissionPaid || earnings.estimatedCommission || 0).toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{agency?.commissionRate || 20}% of revenue{!earnings.commissionPaid && earnings.estimatedCommission ? ' (est.)' : ''}</p>
+          </div>
+          <div className="rounded-xl bg-white/10 backdrop-blur p-4">
+            <p className="text-xs text-slate-300 uppercase tracking-wider">GST on Commission</p>
+            <p className="mt-1 text-2xl font-bold text-orange-400">−₹{(earnings.gstPaid || earnings.estimatedGST || 0).toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">18% of commission</p>
+          </div>
+          <div className="rounded-xl bg-white/10 backdrop-blur p-4">
+            <p className="text-xs text-slate-300 uppercase tracking-wider">TDS Deducted</p>
+            <p className="mt-1 text-2xl font-bold text-yellow-400">−₹{(earnings.tdsDeducted || earnings.estimatedTDS || 0).toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">1% TDS u/s 194O</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+          <div className="rounded-xl bg-white/10 backdrop-blur p-4">
+            <p className="text-xs text-slate-300 uppercase tracking-wider">Payment Gateway Fee</p>
+            <p className="mt-1 text-2xl font-bold text-blue-400">−₹{(earnings.gatewayFees || earnings.estimatedGateway || 0).toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">2% processing fee</p>
+          </div>
+          <div className="rounded-xl bg-white/10 backdrop-blur p-4">
+            <p className="text-xs text-slate-300 uppercase tracking-wider">Total Deductions</p>
+            <p className="mt-1 text-2xl font-bold text-rose-300">−₹{(earnings.totalDeductions || earnings.estimatedTotalDeductions || 0).toLocaleString()}</p>
           </div>
           <div className="rounded-xl bg-white/10 backdrop-blur p-4">
             <p className="text-xs text-slate-300 uppercase tracking-wider">Net Earnings</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-400">₹{earnings.netPayout.toLocaleString()}</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-400">₹{(earnings.netPayout || earnings.estimatedNetEarnings || 0).toLocaleString()}</p>
+            {!earnings.netPayout && earnings.estimatedNetEarnings > 0 && (
+              <p className="text-xs text-emerald-300/60 mt-0.5">Estimated — payouts pending</p>
+            )}
           </div>
           <div className="rounded-xl bg-white/10 backdrop-blur p-4">
             <p className="text-xs text-slate-300 uppercase tracking-wider">Payout Status</p>
-            <div className="mt-1 flex items-baseline gap-3">
+            <div className="mt-1 flex items-baseline gap-2 flex-wrap">
               <div>
-                <span className="text-2xl font-bold text-emerald-400">{earnings.paidPayouts}</span>
-                <span className="text-xs text-slate-400 ml-1">paid</span>
+                <span className="text-xl font-bold text-emerald-400">{earnings.completedPayouts || 0}</span>
+                <span className="text-[10px] text-slate-400 ml-1">paid</span>
               </div>
               <div>
-                <span className="text-2xl font-bold text-amber-400">{earnings.pendingPayouts}</span>
-                <span className="text-xs text-slate-400 ml-1">pending</span>
+                <span className="text-xl font-bold text-amber-400">{earnings.scheduledPayouts || 0}</span>
+                <span className="text-[10px] text-slate-400 ml-1">scheduled</span>
+              </div>
+              <div>
+                <span className="text-xl font-bold text-blue-400">{earnings.processingPayouts || 0}</span>
+                <span className="text-[10px] text-slate-400 ml-1">processing</span>
               </div>
             </div>
           </div>
         </div>
+
+        {/* ── GMV & Tier Progress ── */}
+        {agency?.nextTierGMV && (
+          <div className="mt-5 rounded-xl bg-white/10 backdrop-blur p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-slate-300 uppercase tracking-wider">Tier Progress</p>
+              <p className="text-xs text-slate-400">₹{(agency.quarterlyGMV || 0).toLocaleString()} / ₹{(agency.nextTierGMV).toLocaleString()} quarterly GMV</p>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2.5">
+              <div
+                className="bg-gradient-to-r from-amber-400 to-orange-500 h-2.5 rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(((agency.quarterlyGMV || 0) / agency.nextTierGMV) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1.5">Reach ₹{agency.nextTierGMV.toLocaleString()} quarterly GMV to unlock lower commission rates</p>
+          </div>
+        )}
       </section>
 
       {/* ── Recent Bookings ── */}

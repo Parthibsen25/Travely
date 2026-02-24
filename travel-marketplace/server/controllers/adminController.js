@@ -124,21 +124,40 @@ exports.analytics = async (req, res) => {
       if (['CONFIRMED', 'COMPLETED'].includes(s._id)) confirmedRevenue += s.revenue;
     });
 
-    // ── Payout aggregation ──
+    // ── Payout aggregation (new financial fields) ──
     const payoutAgg = await Payout.aggregate([
-      { $group: { _id: '$status', totalCommission: { $sum: '$commissionDeducted' }, totalPayouts: { $sum: '$payoutAmount' }, totalRevenue: { $sum: '$totalRevenue' }, count: { $sum: 1 } } }
+      {
+        $group: {
+          _id: '$status',
+          totalGross: { $sum: '$grossAmount' },
+          totalCommission: { $sum: '$platformCommission' },
+          totalGST: { $sum: '$gstOnCommission' },
+          totalTDS: { $sum: '$tdsDeducted' },
+          totalGatewayFee: { $sum: '$paymentGatewayFee' },
+          totalDeductions: { $sum: '$totalDeductions' },
+          totalNetPayout: { $sum: '$netPayoutAmount' },
+          count: { $sum: 1 }
+        }
+      }
     ]);
     let totalCommissionRevenue = 0;
     let totalPayoutAmount = 0;
-    let totalPayoutRevenue = 0;
+    let totalGrossRevenue = 0;
+    let totalGSTCollected = 0;
+    let totalTDSCollected = 0;
+    let totalGatewayFees = 0;
     let pendingPayouts = 0;
-    let paidPayouts = 0;
+    let completedPayouts = 0;
+    let scheduledPayouts = 0;
     payoutAgg.forEach(p => {
       totalCommissionRevenue += p.totalCommission;
-      totalPayoutAmount += p.totalPayouts;
-      totalPayoutRevenue += p.totalRevenue;
-      if (p._id === 'PENDING') pendingPayouts = p.count;
-      if (p._id === 'PAID') paidPayouts = p.count;
+      totalPayoutAmount += p.totalNetPayout;
+      totalGrossRevenue += p.totalGross;
+      totalGSTCollected += p.totalGST;
+      totalTDSCollected += p.totalTDS;
+      totalGatewayFees += p.totalGatewayFee;
+      if (['PENDING', 'SCHEDULED'].includes(p._id)) scheduledPayouts += p.count;
+      if (['PAID', 'COMPLETED'].includes(p._id)) completedPayouts += p.count;
     });
 
     // ── Monthly revenue trend (last 6 months) ──
@@ -152,7 +171,7 @@ exports.analytics = async (req, res) => {
 
     // ── Top 5 agencies by revenue ──
     const topAgencies = await Payout.aggregate([
-      { $group: { _id: '$agencyId', totalRevenue: { $sum: '$totalRevenue' }, commission: { $sum: '$commissionDeducted' }, payouts: { $sum: '$payoutAmount' } } },
+      { $group: { _id: '$agencyId', totalRevenue: { $sum: '$grossAmount' }, commission: { $sum: '$platformCommission' }, payouts: { $sum: '$netPayoutAmount' } } },
       { $sort: { totalRevenue: -1 } },
       { $limit: 5 },
       { $lookup: { from: 'agencies', localField: '_id', foreignField: '_id', as: 'agency' } },
@@ -181,14 +200,21 @@ exports.analytics = async (req, res) => {
       .populate('userId', 'name email')
       .lean();
 
+    // ── Estimated platform commission (average ~18% across agencies, before payouts) ──
+    const avgCommissionRate = 18; // Weighted average across tiers
+    const estPlatformCommission = Math.round(confirmedRevenue * avgCommissionRate / 100);
+
     res.json({
       totalAgencies, pendingAgencyVerifications, verifiedAgencies, rejectedAgencies, suspendedAgencies,
       totalUsers, totalPackages, activePackages, totalReviews,
       totalBookings, bookingsByStatus,
       totalRevenue: Math.round(confirmedRevenue),
-      totalCommissionRevenue: Math.round(totalCommissionRevenue),
+      totalCommissionRevenue: Math.round(totalCommissionRevenue) || estPlatformCommission,
+      totalGSTCollected: Math.round(totalGSTCollected),
+      totalTDSCollected: Math.round(totalTDSCollected),
+      totalGatewayFees: Math.round(totalGatewayFees),
       totalPayoutAmount: Math.round(totalPayoutAmount),
-      pendingPayouts, paidPayouts,
+      scheduledPayouts, completedPayouts,
       avgBookingValue,
       monthlyRevenue,
       topAgencies,
