@@ -9,10 +9,12 @@ const generateToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
@@ -107,7 +109,7 @@ exports.agencyLogin = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
   res.json({ message: 'Logged out' });
 };
 
@@ -122,7 +124,7 @@ exports.me = async (req, res) => {
     if (role === 'AGENCY') {
       const agency = await Agency.findById(id).select('-password');
       if (!agency || agency.isSuspended) {
-        res.clearCookie('token');
+        res.clearCookie('token', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
         return res.json({ user: null });
       }
 
@@ -139,7 +141,7 @@ exports.me = async (req, res) => {
 
     const user = await User.findById(id).select('-password');
     if (!user || user.isSuspended) {
-      res.clearCookie('token');
+      res.clearCookie('token', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
       return res.json({ user: null });
     }
 
@@ -153,7 +155,7 @@ exports.me = async (req, res) => {
       }
     });
   } catch (err) {
-    res.clearCookie('token');
+    res.clearCookie('token', { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax' });
     return res.json({ user: null });
   }
 };

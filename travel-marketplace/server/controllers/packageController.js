@@ -227,9 +227,8 @@ exports.uploadPackageImage = async (req, res) => {
     }
 
     const imagePath = `/uploads/packages/${req.file.filename}`;
-    const imageUrl = `${req.protocol}://${req.get('host')}${imagePath}`;
 
-    res.status(201).json({ imageUrl, imagePath });
+    res.status(201).json({ imageUrl: imagePath, imagePath });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

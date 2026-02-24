@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 
 function timeAgo(dateStr) {
@@ -48,14 +49,16 @@ const typeIcon = {
 };
 
 export default function NotificationBell() {
+  const { isAuthenticated } = useContext(AuthContext);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const ref = useRef(null);
 
-  // Poll unread count every 30s
+  // Poll unread count every 30s (only when authenticated)
   useEffect(() => {
+    if (!isAuthenticated) { setUnreadCount(0); return; }
     async function fetchCount() {
       try {
         const data = await apiFetch('/api/notifications/unread-count');
@@ -65,7 +68,7 @@ export default function NotificationBell() {
     fetchCount();
     const timer = setInterval(fetchCount, 30000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isAuthenticated]);
 
   // Load full list when panel opens
   useEffect(() => {
