@@ -302,12 +302,19 @@ export default function AdminBanners() {
               }`}
             >
               {/* Thumbnail */}
-              <div className="h-20 w-36 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200">
-                <img
-                  src={mediaUrl(banner.imageUrl)}
-                  alt={banner.title}
-                  className="h-full w-full object-cover"
-                />
+              <div className="h-20 w-36 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 relative">
+                {banner.imageUrl && banner.imageUrl.startsWith('http') ? (
+                  <img
+                    src={mediaUrl(banner.imageUrl)}
+                    alt={banner.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-red-50 text-center p-2">
+                    <svg className="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span className="mt-1 text-[10px] font-semibold text-red-500">No image</span>
+                  </div>
+                )}
               </div>
 
               {/* Info */}

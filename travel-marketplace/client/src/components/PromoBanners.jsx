@@ -11,7 +11,9 @@ export default function PromoBanners() {
     async function load() {
       try {
         const data = await apiFetch('/api/banners/active');
-        setBanners(data.banners || []);
+        // Only keep banners that have a valid image URL
+        const valid = (data.banners || []).filter((b) => b.imageUrl && b.imageUrl.startsWith('http'));
+        setBanners(valid);
       } catch {
         // silently fail
       } finally {

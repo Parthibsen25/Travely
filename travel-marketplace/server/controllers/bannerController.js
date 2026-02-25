@@ -1,9 +1,12 @@
 const Banner = require('../models/Banner');
 
-// Public: get active banners
+// Public: get active banners (only those with valid Cloudinary image URLs)
 exports.getActiveBanners = async (req, res) => {
   try {
-    const banners = await Banner.find({ isActive: true })
+    const banners = await Banner.find({
+      isActive: true,
+      imageUrl: { $regex: '^https?://', $ne: '' },
+    })
       .sort('position createdAt')
       .lean();
     res.json({ banners });
