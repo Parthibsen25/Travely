@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
-const { uploadPackageImage: packageImageUpload } = require('../middleware/uploadMiddleware');
+const { uploadPackageImage: packageImageUpload, uploadPackageToCloudinary } = require('../middleware/uploadMiddleware');
 const {
   createPackage,
   uploadPackageImage,
@@ -28,7 +28,7 @@ router.get('/by-budget', getPackagesByBudget);
 
 // Agency-only routes
 router.get('/my', protect, authorizeRoles('AGENCY'), getMyPackages);
-router.post('/upload-image', protect, authorizeRoles('AGENCY'), packageImageUpload.single('image'), uploadPackageImage);
+router.post('/upload-image', protect, authorizeRoles('AGENCY'), packageImageUpload.single('image'), uploadPackageToCloudinary, uploadPackageImage);
 router.post('/', protect, authorizeRoles('AGENCY'), createPackage);
 router.put('/:id', protect, authorizeRoles('AGENCY'), updatePackage);
 router.delete('/:id', protect, authorizeRoles('AGENCY'), deletePackage);
