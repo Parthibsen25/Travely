@@ -11,24 +11,13 @@ export function apiUrl(path) {
 export function mediaUrl(pathOrUrl) {
   if (!pathOrUrl) return '';
 
-  // Handle data: and blob: URLs as-is
+  // data: and blob: URLs pass through unchanged
   if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:')) {
     return pathOrUrl;
   }
 
-  // Strip any hardcoded localhost origin (legacy DB entries) to get the relative path
-  const localhostPattern = /^https?:\/\/localhost(:\d+)?/i;
-  if (localhostPattern.test(pathOrUrl)) {
-    pathOrUrl = pathOrUrl.replace(localhostPattern, '');
-  }
-
-  // If it's already an absolute URL (not localhost), return as-is
-  const absolutePattern = /^(https?:)?\/\//i;
-  if (absolutePattern.test(pathOrUrl)) {
-    return pathOrUrl;
-  }
-
-  return apiUrl(pathOrUrl);
+  // All images are stored as absolute Cloudinary URLs — return as-is
+  return pathOrUrl;
 }
 
 export async function apiFetch(path, options = {}) {

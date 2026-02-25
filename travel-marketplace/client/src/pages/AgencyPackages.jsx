@@ -481,27 +481,36 @@ export default function AgencyPackages() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-lg">🖼️</div>
               <div>
                 <h3 className="font-display text-base font-bold text-slate-900">Cover Image</h3>
-                <p className="text-xs text-slate-500">Upload or link a cover photo</p>
+                <p className="text-xs text-slate-500">Upload a cover photo</p>
               </div>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="flex-1 space-y-3">
-                <input type="url" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImagePreviewError(false); setUploadError(''); }} className={inputClass} placeholder="https://example.com/image.jpg" />
-                <div className="relative">
-                  <input type="file" accept="image/*" onChange={handleImageFileChange} disabled={uploadingImage || loading} className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2.5 file:font-semibold file:text-amber-700 hover:file:bg-amber-100 file:cursor-pointer file:transition" />
-                  {uploadingImage && <p className="mt-1 text-xs text-amber-600 animate-pulse">Uploading...</p>}
-                  {uploadError && <p className="mt-1 text-xs text-red-600">{uploadError}</p>}
-                </div>
+
+            {imageUrl && !imagePreviewError ? (
+              <div className="relative w-full overflow-hidden rounded-xl border border-slate-200">
+                <img src={mediaUrl(imageUrl)} alt="Cover preview" className="w-full max-h-64 object-cover" onError={() => setImagePreviewError(true)} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <button type="button" onClick={() => { setImageUrl(''); setImagePreviewError(false); }} className="absolute top-3 right-3 flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-card backdrop-blur transition hover:bg-red-50">
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  Remove
+                </button>
+                <p className="absolute bottom-3 left-3 text-xs font-medium text-white/90">✓ Uploaded to Cloudinary</p>
               </div>
-              {imageUrl && !imagePreviewError && (
-                <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-xl border border-slate-200">
-                  <img src={mediaUrl(imageUrl)} alt="Preview" className="h-full w-full object-cover" onError={() => setImagePreviewError(true)} />
-                  <button type="button" onClick={() => { setImageUrl(''); setImagePreviewError(false); }} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 shadow-card transition hover:bg-red-50">
-                    <svg className="h-3.5 w-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+            ) : (
+              <label className={`group flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed ${uploadError ? 'border-red-300 bg-red-50/50' : 'border-slate-300 bg-slate-50'} p-8 text-center transition cursor-pointer hover:border-amber-400 hover:bg-amber-50/50`}>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-2xl transition group-hover:scale-110">📷</div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">{uploadingImage ? 'Uploading...' : 'Click to upload cover image'}</p>
+                  <p className="mt-0.5 text-xs text-slate-400">JPG, PNG, WebP or AVIF — max 5 MB</p>
                 </div>
-              )}
-            </div>
+                <input type="file" accept="image/*" onChange={handleImageFileChange} disabled={uploadingImage || loading} className="hidden" />
+                {uploadingImage && (
+                  <div className="w-48 overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-1.5 animate-pulse rounded-full bg-amber-500" style={{ width: '60%' }} />
+                  </div>
+                )}
+                {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
+              </label>
+            )}
           </div>
 
           {/* Section: Pricing & Details */}
