@@ -34,6 +34,7 @@ export default function UserLayout() {
     { to: '/app/plan-trip', label: 'Plan My Budget Trip' },
     { to: '/app/my-trips', label: 'My Trips' },
     { to: '/app/my-requests', label: 'My Requests' },
+    { to: '/app/referrals', label: 'Refer & Earn' },
   ];
 
   return (

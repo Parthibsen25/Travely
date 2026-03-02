@@ -8,7 +8,9 @@ const CouponSchema = new mongoose.Schema(
     discountValue: { type: Number, required: true, min: 0 },
     // empty means applicable to ALL packages of this agency
     applicablePackages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Package' }],
-    agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency', required: true },
+    agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agency' },
+    isPlatformCoupon: { type: Boolean, default: false },
+    maxUsagePerUser: { type: Number, default: 1 },
     status: {
       type: String,
       enum: ['PENDING', 'APPROVED', 'REJECTED'],

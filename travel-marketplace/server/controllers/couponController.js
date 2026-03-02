@@ -277,9 +277,12 @@ exports.validateCoupon = async (req, res) => {
     const pkg = await Package.findById(packageId).lean();
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
 
-    // Coupon must belong to the same agency as the package
-    if (coupon.agencyId.toString() !== pkg.agencyId.toString()) {
-      return res.status(400).json({ message: 'This coupon is not valid for the selected package' });
+    // Platform coupons (referral rewards) work across all agencies
+    if (!coupon.isPlatformCoupon) {
+      // Coupon must belong to the same agency as the package
+      if (coupon.agencyId && coupon.agencyId.toString() !== pkg.agencyId.toString()) {
+        return res.status(400).json({ message: 'This coupon is not valid for the selected package' });
+      }
     }
 
     // If coupon has specific packages, check membership

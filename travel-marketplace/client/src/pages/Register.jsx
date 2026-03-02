@@ -1,14 +1,17 @@
 import React, { useContext, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
 
 export default function Register() {
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -20,11 +23,17 @@ export default function Register() {
     try {
       const data = await apiFetch('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password, referralCode: referralCode.trim() || undefined })
       });
 
       login(data.user);
-      navigate('/app', { replace: true });
+
+      if (data.referralApplied && data.welcomeCoupon) {
+        setSuccessMsg(`🎉 Referral applied! Your welcome coupon: ${data.welcomeCoupon}`);
+        setTimeout(() => navigate('/app', { replace: true }), 2500);
+      } else {
+        navigate('/app', { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'Register failed');
     } finally {
@@ -85,6 +94,33 @@ export default function Register() {
                 placeholder="Min 6 characters"
               />
             </div>
+
+            <div>
+              <label htmlFor="referralCode" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Referral Code <span className="font-normal text-slate-400">(optional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="referralCode"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  className="focus-ring w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm uppercase tracking-wider transition-colors focus:bg-white"
+                  placeholder="e.g. JOHN1A2B3C"
+                  maxLength={20}
+                />
+                {referralCode && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {successMsg && (
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 animate-scale-in">
+                {successMsg}
+              </div>
+            )}
 
             {error && (
               <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 animate-scale-in">

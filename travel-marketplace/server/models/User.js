@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const UserSchema = new mongoose.Schema(
   {
@@ -7,10 +8,22 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['USER', 'AGENCY', 'ADMIN'], default: 'USER' },
-    isSuspended: { type: Boolean, default: false }
+    isSuspended: { type: Boolean, default: false },
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
 );
+
+// Auto-generate referral code before first save
+UserSchema.pre('save', function (next) {
+  if (!this.referralCode && this.role === 'USER') {
+    const namePart = (this.name || 'USER').replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase();
+    const randomPart = crypto.randomBytes(3).toString('hex').toUpperCase();
+    this.referralCode = `${namePart}${randomPart}`;
+  }
+  next();
+});
 
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();

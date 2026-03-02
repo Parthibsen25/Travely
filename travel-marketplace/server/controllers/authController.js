@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Agency = require('../models/Agency');
+const { applyReferral } = require('./referralController');
 
 const generateToken = (payload) => {
   if (!process.env.JWT_SECRET) {
@@ -20,7 +21,7 @@ const cookieOptions = {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, referralCode } = req.body;
     
     // Validation
     if (!name || !email || !password) {
@@ -35,9 +36,20 @@ exports.register = async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email already registered' });
     
     const user = await User.create({ name, email, password });
+
+    // Process referral code if provided
+    let referralResult = null;
+    if (referralCode) {
+      referralResult = await applyReferral(user, referralCode);
+    }
+
     const token = generateToken({ id: user._id, role: user.role });
     res.cookie('token', token, cookieOptions);
-    res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    res.status(201).json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, referralCode: user.referralCode },
+      referralApplied: !!referralResult,
+      welcomeCoupon: referralResult ? referralResult.refereeCoupon : null,
+    });
   } catch (err) {
     console.error('Register error:', err);
     // Provide more detailed error messages
@@ -151,7 +163,8 @@ exports.me = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        referralCode: user.referralCode || null
       }
     });
   } catch (err) {

@@ -27,6 +27,7 @@ import Cart from './pages/Cart';
 import Profile from './pages/Profile';
 import PlanTrip from './pages/PlanTrip';
 import ChatPage from './pages/ChatPage';
+import ReferralPage from './pages/ReferralPage';
 
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPackages from './pages/AgencyPackages';
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="plan-trip" element={<PlanTrip />} />
           <Route path="my-requests" element={<MyRequests />} />
           <Route path="chat" element={<ChatPage />} />
+          <Route path="referrals" element={<ReferralPage />} />
         </Route>
       </Route>
 

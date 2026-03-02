@@ -11,7 +11,8 @@ function normalizeSessionUser(payload) {
     email: payload.email,
     role: payload.role,
     businessName: payload.businessName || null,
-    createdAt: payload.createdAt || null
+    createdAt: payload.createdAt || null,
+    referralCode: payload.referralCode || null
   };
 }
 
