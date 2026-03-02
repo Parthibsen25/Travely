@@ -299,13 +299,15 @@ exports.updateExpense = async (req, res) => {
     const expense = trip.dailyExpenses.id(req.params.expenseId);
     if (!expense) return res.status(404).json({ message: 'Expense not found' });
 
-    const { date, category, description, amount, paymentMethod, paidBy } = req.body;
+    const { date, category, description, amount, paymentMethod, paidBy, splitType, splitAmong } = req.body;
     if (date !== undefined) expense.date = date;
     if (category !== undefined) expense.category = category;
     if (description !== undefined) expense.description = description.trim();
     if (amount !== undefined && amount > 0) expense.amount = Number(amount);
     if (paymentMethod !== undefined) expense.paymentMethod = paymentMethod;
     if (paidBy !== undefined) expense.paidBy = paidBy;
+    if (splitType !== undefined) expense.splitType = splitType;
+    if (splitAmong !== undefined) expense.splitAmong = splitAmong;
 
     await trip.save();
     res.json({ trip });

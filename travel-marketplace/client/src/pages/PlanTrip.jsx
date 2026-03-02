@@ -151,7 +151,7 @@ export default function PlanTrip() {
   const [expForm, setExpForm] = useState({
     date: new Date().toISOString().slice(0, 10),
     category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: '',
-    splitType: 'equal'
+    splitType: 'equal', splitAmong: []
   });
   const [addingExpense, setAddingExpense] = useState(false);
 
@@ -159,7 +159,7 @@ export default function PlanTrip() {
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [editExpForm, setEditExpForm] = useState({
     date: '', category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: '',
-    splitType: 'equal'
+    splitType: 'equal', splitAmong: []
   });
 
   // Checklist
@@ -446,12 +446,13 @@ export default function PlanTrip() {
           date: expForm.date, category: expForm.category,
           description: expForm.description.trim(), amount: Number(expForm.amount),
           paymentMethod: expForm.paymentMethod, paidBy: expForm.paidBy,
-          splitType: expForm.splitType || 'equal'
+          splitType: expForm.splitType || 'equal',
+          splitAmong: expForm.splitType === 'equal' ? expForm.splitAmong : []
         })
       });
       setSelectedTrip(result.trip);
       setTrips((prev) => prev.map((t) => t._id === tripId ? result.trip : t));
-      setExpForm({ ...expForm, description: '', amount: '', splitType: 'equal' });
+      setExpForm({ ...expForm, description: '', amount: '', splitType: 'equal', splitAmong: [] });
       showToast('Expense added', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to add expense', 'error');
@@ -477,7 +478,8 @@ export default function PlanTrip() {
       date: exp.date ? new Date(exp.date).toISOString().slice(0, 10) : '',
       category: exp.category, description: exp.description,
       amount: exp.amount, paymentMethod: exp.paymentMethod || 'cash',
-      paidBy: exp.paidBy || '', splitType: exp.splitType || 'equal'
+      paidBy: exp.paidBy || '', splitType: exp.splitType || 'equal',
+      splitAmong: exp.splitAmong || []
     });
   }
   function cancelEditExpense() { setEditingExpenseId(null); }
@@ -494,7 +496,8 @@ export default function PlanTrip() {
           date: editExpForm.date, category: editExpForm.category,
           description: editExpForm.description.trim(), amount: Number(editExpForm.amount),
           paymentMethod: editExpForm.paymentMethod, paidBy: editExpForm.paidBy,
-          splitType: editExpForm.splitType || 'equal'
+          splitType: editExpForm.splitType || 'equal',
+          splitAmong: editExpForm.splitType === 'equal' ? editExpForm.splitAmong : []
         })
       });
       setSelectedTrip(result.trip);
@@ -892,6 +895,7 @@ export default function PlanTrip() {
                     {trip.travelerNames?.length > 0 && (
                       <div className="mt-3 flex items-center justify-between gap-3">
                         {trip.travelerNames.length >= 2 && (
+                          <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold text-slate-500">Split:</span>
                             {[
@@ -899,7 +903,7 @@ export default function PlanTrip() {
                               { value: 'full', label: '👤 No Split (personal)' },
                             ].map((opt) => (
                               <button key={opt.value} type="button"
-                                onClick={() => setExpForm({ ...expForm, splitType: opt.value })}
+                                onClick={() => setExpForm({ ...expForm, splitType: opt.value, splitAmong: [] })}
                                 className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
                                   expForm.splitType === opt.value
                                     ? 'bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200'
@@ -909,6 +913,39 @@ export default function PlanTrip() {
                               </button>
                             ))}
                           </div>
+                          {/* Select specific people for equal split */}
+                          {expForm.splitType === 'equal' && trip.travelerNames.length >= 3 && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] text-slate-400">Split among:</span>
+                              {trip.travelerNames.map((name) => {
+                                const isSelected = expForm.splitAmong.length === 0 || expForm.splitAmong.includes(name);
+                                return (
+                                  <button key={name} type="button"
+                                    onClick={() => {
+                                      const current = expForm.splitAmong.length === 0 ? [...trip.travelerNames] : [...expForm.splitAmong];
+                                      const updated = current.includes(name)
+                                        ? current.filter((n) => n !== name)
+                                        : [...current, name];
+                                      // If all selected or none, reset to empty (= all)
+                                      setExpForm({ ...expForm, splitAmong: updated.length === trip.travelerNames.length ? [] : updated });
+                                    }}
+                                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                                      isSelected
+                                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+                                        : 'bg-slate-100 text-slate-400 line-through'
+                                    }`}>
+                                    {name}
+                                  </button>
+                                );
+                              })}
+                              {expForm.splitAmong.length > 0 && expForm.splitAmong.length < trip.travelerNames.length && (
+                                <span className="text-[10px] text-emerald-600 font-bold">
+                                  ({expForm.splitAmong.length} of {trip.travelerNames.length})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         )}
                         <button onClick={() => handleAddExpense(trip._id)} disabled={addingExpense}
                           className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-600/20 transition hover:shadow-xl hover:brightness-105 disabled:opacity-60">
@@ -1087,9 +1124,14 @@ export default function PlanTrip() {
                                         👤 {exp.paidBy}
                                       </span>
                                     )}
-                                    {exp.splitType && exp.splitType !== 'equal' && (
+                                    {exp.splitType === 'full' && (
                                       <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-100">
-                                        {exp.splitType === 'full' ? '👤 Full' : '✂️ Custom'}
+                                        👤 Personal
+                                      </span>
+                                    )}
+                                    {exp.splitType === 'equal' && exp.splitAmong && exp.splitAmong.length > 0 && (
+                                      <span className="ml-1.5 inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-100">
+                                        ➗ {exp.splitAmong.join(', ')}
                                       </span>
                                     )}
                                   </p>
