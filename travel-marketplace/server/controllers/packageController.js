@@ -391,7 +391,9 @@ exports.getPackageById = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid package id' });
     }
-    const pkg = await Package.findById(req.params.id).lean();
+    const pkg = await Package.findById(req.params.id)
+      .populate('agencyId', 'businessName email verificationStatus')
+      .lean();
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
 
     // collect available offers: embedded package offers + global offers that match

@@ -9,6 +9,7 @@ import BudgetFilter from '../components/BudgetFilter';
 import PromoBanners from '../components/PromoBanners';
 import CustomPackageRequest from '../components/CustomPackageRequest';
 import SiteFooter from '../components/SiteFooter';
+import RecommendedForYou from '../components/RecommendedForYou';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(amount || 0));
@@ -381,6 +382,9 @@ export default function UserDashboard() {
         </section>
       )}
       </div>
+
+      {/* ── Recommended For You ── */}
+      <RecommendedForYou />
 
       {/* ── Best priced packages by Duration ── */}
       <DurationFilter />

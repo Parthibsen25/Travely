@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import AppLogo from '../components/AppLogo';
 import NotificationBell from '../components/NotificationBell';
+import ChatBadge from '../components/ChatBadge';
 
 const linkClass = ({ isActive }) =>
   `relative rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 ${
@@ -51,6 +52,7 @@ export default function UserLayout() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ChatBadge />
             <NotificationBell />
             <NavLink
               to="/app/wishlist"

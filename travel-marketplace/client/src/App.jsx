@@ -26,6 +26,7 @@ import Wishlist from './pages/Wishlist';
 import Cart from './pages/Cart';
 import Profile from './pages/Profile';
 import PlanTrip from './pages/PlanTrip';
+import ChatPage from './pages/ChatPage';
 
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPackages from './pages/AgencyPackages';
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="plan-trip" element={<PlanTrip />} />
           <Route path="my-requests" element={<MyRequests />} />
+          <Route path="chat" element={<ChatPage />} />
         </Route>
       </Route>
 
@@ -137,6 +139,7 @@ export default function App() {
           <Route path="requests" element={<AgencyRequests />} />
           <Route path="profile" element={<AgencyProfile />} />
           <Route path="payouts" element={<AgencyPayouts />} />
+          <Route path="chat" element={<ChatPage />} />
         </Route>
       </Route>
 

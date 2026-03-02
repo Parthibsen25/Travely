@@ -23,6 +23,8 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
 const packageRequestRoutes = require('./routes/packageRequestRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -94,6 +96,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/package-requests', packageRequestRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 app.use(errorHandler);
 
@@ -102,13 +106,20 @@ module.exports = app;
 
 // Only listen when running directly (not on Vercel)
 if (!process.env.VERCEL) {
+  const http = require('http');
+  const setupSocket = require('./config/socket');
+
   // Connect DB eagerly when running as a long-lived server
   connectDB().catch((err) => {
     console.error('Initial DB connection failed:', err.message);
     process.exit(1);
   });
 
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  const server = http.createServer(app);
+  const io = setupSocket(server, corsOptions);
+  app.set('io', io);
+
+  server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
   // Start scheduled jobs (only in non-test/non-serverless environments)
   if (process.env.NODE_ENV !== 'test') {
