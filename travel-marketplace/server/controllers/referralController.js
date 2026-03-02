@@ -39,8 +39,19 @@ async function createReferralCoupon(userId, label) {
 // ── Get my referral info ────────────────────────────────
 exports.getMyReferral = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('referralCode name').lean();
+    let user = await User.findById(req.user.id).select('referralCode name');
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Generate referral code for existing users who don't have one
+    if (!user.referralCode) {
+      const crypto = require('crypto');
+      const namePart = (user.name || 'USER').replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase();
+      const randomPart = crypto.randomBytes(3).toString('hex').toUpperCase();
+      user.referralCode = `${namePart}${randomPart}`;
+      await user.save();
+    }
+
+    user = user.toObject();
 
     const referrals = await Referral.find({ referrerId: req.user.id })
       .populate('refereeId', 'name email createdAt')

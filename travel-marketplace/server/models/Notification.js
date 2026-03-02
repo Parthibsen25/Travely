@@ -13,6 +13,7 @@ const NotificationSchema = new mongoose.Schema(
         'COUPON_APPROVED',      // agency gets notified when admin approves their coupon
         'COUPON_REJECTED',      // agency gets notified when admin rejects their coupon
         'BOOKING_CANCELLED',    // agency gets notified when booking is cancelled
+        'TRIP_INVITE',          // user gets notified when invited to collaborate on a trip
         'GENERAL',
       ],
       required: true,
@@ -21,7 +22,7 @@ const NotificationSchema = new mongoose.Schema(
     message: { type: String, required: true },
     // optional reference to the related document
     referenceId: { type: mongoose.Schema.Types.ObjectId },
-    referenceModel: { type: String, enum: ['Booking', 'Coupon', 'Package'] },
+    referenceModel: { type: String, enum: ['Booking', 'Coupon', 'Package', 'CustomTrip'] },
     isRead: { type: Boolean, default: false },
   },
   { timestamps: true }

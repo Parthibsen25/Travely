@@ -22,6 +22,7 @@ const {
   addCollaboratorExpense,
   updateCollaboratorChecklist,
   removeCollaborator,
+  inviteCollaborator,
   // Split bills
   getSettlements,
   getSharedSettlements,
@@ -65,6 +66,7 @@ router.get('/:id/summary', getTripSummary);
 // Collaborative
 router.post('/:id/share', enableSharing);
 router.delete('/:id/share', disableSharing);
+router.post('/:id/invite', inviteCollaborator);
 router.delete('/:id/collaborators/:collabId', removeCollaborator);
 
 // Split bills

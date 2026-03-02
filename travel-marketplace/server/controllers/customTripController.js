@@ -1,5 +1,22 @@
 const CustomTrip = require('../models/CustomTrip');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 const crypto = require('crypto');
+
+/* ─── Helper: find trip as owner OR editor collaborator ───────────────── */
+async function findTripAsOwnerOrEditor(tripId, userId) {
+  // Owner check
+  let trip = await CustomTrip.findOne({ _id: tripId, userId });
+  if (trip) return { trip, isOwner: true };
+  // Collaborator check
+  trip = await CustomTrip.findOne({
+    _id: tripId,
+    'collaborators.userId': userId,
+    'collaborators.role': 'editor'
+  });
+  if (trip) return { trip, isOwner: false };
+  return { trip: null, isOwner: false };
+}
 
 /* ─── Budget Templates ────────────────────────────────────────────────── */
 const BUDGET_TEMPLATES = [
@@ -104,10 +121,15 @@ exports.getTemplates = (req, res) => {
   res.json({ templates: BUDGET_TEMPLATES });
 };
 
-// GET /api/custom-trips/my – list user's custom trips
+// GET /api/custom-trips/my – list user's custom trips (owned + collaborated)
 exports.getMyTrips = async (req, res) => {
   try {
-    const trips = await CustomTrip.find({ userId: req.user.id }).sort({ updatedAt: -1 });
+    const trips = await CustomTrip.find({
+      $or: [
+        { userId: req.user.id },
+        { 'collaborators.userId': req.user.id }
+      ]
+    }).sort({ updatedAt: -1 });
     res.json({ trips });
   } catch (err) {
     console.error(err);
@@ -115,10 +137,16 @@ exports.getMyTrips = async (req, res) => {
   }
 };
 
-// GET /api/custom-trips/:id – single trip detail
+// GET /api/custom-trips/:id – single trip detail (owner or collaborator)
 exports.getTrip = async (req, res) => {
   try {
-    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    const trip = await CustomTrip.findOne({
+      _id: req.params.id,
+      $or: [
+        { userId: req.user.id },
+        { 'collaborators.userId': req.user.id }
+      ]
+    }).populate('collaborators.userId', 'name email');
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
     res.json({ trip });
   } catch (err) {
@@ -158,11 +186,19 @@ exports.createTrip = async (req, res) => {
   }
 };
 
-// PUT /api/custom-trips/:id – update a custom trip
+// PUT /api/custom-trips/:id – update a custom trip (owner: all fields, collaborator: checklist only)
 exports.updateTrip = async (req, res) => {
   try {
-    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    const { trip, isOwner } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    // Collaborators can only update checklist
+    if (!isOwner) {
+      const { checklist } = req.body;
+      if (checklist !== undefined) trip.checklist = checklist;
+      await trip.save();
+      return res.json({ trip });
+    }
 
     const { title, destinations, startDate, endDate, travelers, budgetItems, notes, status } = req.body;
 
@@ -208,10 +244,10 @@ exports.deleteTrip = async (req, res) => {
 
 /* ─── Daily Expenses ──────────────────────────────────────────────────── */
 
-// POST /api/custom-trips/:id/expenses — add a daily expense
+// POST /api/custom-trips/:id/expenses — add a daily expense (owner or editor)
 exports.addExpense = async (req, res) => {
   try {
-    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    const { trip } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
     const { date, category, description, amount, paymentMethod, paidBy } = req.body;
@@ -236,10 +272,10 @@ exports.addExpense = async (req, res) => {
   }
 };
 
-// DELETE /api/custom-trips/:id/expenses/:expenseId — remove a daily expense
+// DELETE /api/custom-trips/:id/expenses/:expenseId — remove a daily expense (owner or editor)
 exports.removeExpense = async (req, res) => {
   try {
-    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    const { trip } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
     trip.dailyExpenses = trip.dailyExpenses.filter(
@@ -254,10 +290,10 @@ exports.removeExpense = async (req, res) => {
   }
 };
 
-// PUT /api/custom-trips/:id/expenses/:expenseId — update a daily expense
+// PUT /api/custom-trips/:id/expenses/:expenseId — update a daily expense (owner or editor)
 exports.updateExpense = async (req, res) => {
   try {
-    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    const { trip } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
     const expense = trip.dailyExpenses.id(req.params.expenseId);
@@ -541,7 +577,84 @@ exports.removeCollaborator = async (req, res) => {
       (c) => c._id.toString() !== req.params.collabId
     );
     await trip.save();
+    
+    // Populate before returning
+    await trip.populate('collaborators.userId', 'name email');
     res.json({ trip });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/custom-trips/:id/invite — invite a user by email as collaborator
+exports.inviteCollaborator = async (req, res) => {
+  try {
+    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Look up user by email
+    const invitedUser = await User.findOne({ email: normalizedEmail });
+    if (!invitedUser) {
+      return res.status(404).json({ message: 'No user found with this email. They need to create an account first.' });
+    }
+
+    // Can't invite yourself
+    if (invitedUser._id.toString() === req.user.id) {
+      return res.status(400).json({ message: "You can't invite yourself — you're already the trip owner!" });
+    }
+
+    // Check if already a collaborator
+    const existing = trip.collaborators.find(
+      (c) => c.userId && c.userId.toString() === invitedUser._id.toString()
+    );
+    if (existing) {
+      return res.status(400).json({ message: `${invitedUser.name} is already a collaborator on this trip.` });
+    }
+
+    // Add as collaborator
+    trip.collaborators.push({
+      userId: invitedUser._id,
+      name: invitedUser.name,
+      email: invitedUser.email,
+      role: 'editor',
+      joinedAt: new Date()
+    });
+
+    // Auto-enable sharing so shared-token routes also work
+    if (!trip.shareToken) {
+      trip.shareToken = crypto.randomBytes(16).toString('hex');
+    }
+    trip.isShared = true;
+
+    await trip.save();
+
+    // Send notification to invited user
+    try {
+      await Notification.create({
+        recipientId: invitedUser._id,
+        recipientRole: 'USER',
+        type: 'TRIP_INVITE',
+        title: 'Trip Collaboration Invite',
+        message: `${req.user.name || 'Someone'} invited you to collaborate on "${trip.title}"`,
+        referenceId: trip._id,
+        referenceModel: 'CustomTrip'
+      });
+    } catch (notifErr) {
+      console.error('Failed to create notification:', notifErr);
+      // Don't fail the invite if notification fails
+    }
+
+    // Populate before returning
+    await trip.populate('collaborators.userId', 'name email');
+    res.json({ trip, message: `${invitedUser.name} has been invited!` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -552,10 +665,10 @@ exports.removeCollaborator = async (req, res) => {
    SPLIT BILLS CALCULATOR
    ═══════════════════════════════════════════════════════════════════════ */
 
-// GET /api/custom-trips/:id/settlements — compute who owes whom
+// GET /api/custom-trips/:id/settlements — compute who owes whom (owner or collaborator)
 exports.getSettlements = async (req, res) => {
   try {
-    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    const { trip } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
     const { settlements, personSummary } = computeSettlements(trip);

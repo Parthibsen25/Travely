@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { useToast } from '../context/ToastContext';
+import { AuthContext } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import Loading from '../components/Loading';
 import SplitBills from '../components/SplitBills';
@@ -115,6 +116,7 @@ function BudgetProgressBar({ spent, total, className = '' }) {
 export default function PlanTrip() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useContext(AuthContext);
 
   /* ─── State ─────────────────────────────────────────────────────── */
   const [loading, setLoading] = useState(true);
@@ -176,6 +178,8 @@ export default function PlanTrip() {
   const budgetSpent = trip?.budgetItems?.reduce((s, b) => s + (b.actualAmount || 0), 0) || 0;
   const dailyExpTotal = trip?.dailyExpenses?.reduce((s, e) => s + e.amount, 0) || 0;
   const totalActual = trip?.totalActual || 0;
+  // Check if current user is the trip owner (vs. collaborator)
+  const isTripOwner = trip ? (trip.userId === user?._id || trip.userId?._id === user?._id) : true;
 
   const categorySummary = useMemo(() => {
     if (!trip?.dailyExpenses?.length) return [];
@@ -599,18 +603,28 @@ export default function PlanTrip() {
                   <span className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide ring-1 ${STATUS_COLORS[trip.status]}`}>
                     {trip.status}
                   </span>
-                  <button onClick={() => openEdit(trip)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-card ring-1 ring-slate-200/60 transition hover:bg-slate-50 hover:shadow-md">
-                    ✏️ Edit
-                  </button>
-                  <button onClick={() => handleShare(trip)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-card ring-1 ring-slate-200/60 transition hover:bg-slate-50 hover:shadow-md">
-                    📤 Share
-                  </button>
+                  {!isTripOwner && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-600 ring-1 ring-purple-200">
+                      🤝 Collaborator
+                    </span>
+                  )}
+                  {isTripOwner && (
+                    <>
+                      <button onClick={() => openEdit(trip)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-card ring-1 ring-slate-200/60 transition hover:bg-slate-50 hover:shadow-md">
+                        ✏️ Edit
+                      </button>
+                      <button onClick={() => handleShare(trip)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-card ring-1 ring-slate-200/60 transition hover:bg-slate-50 hover:shadow-md">
+                        📤 Share
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Status actions */}
+              {/* Status actions (owner only) */}
+              {isTripOwner && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {trip.status === 'PLANNING' && (
                   <button onClick={() => handleStatusChange(trip, 'CONFIRMED')}
@@ -631,11 +645,12 @@ export default function PlanTrip() {
                   </button>
                 )}
               </div>
+              )}
             </div>
 
             {/* ── Tabs ─────────────────────────────────────────────── */}
             <div className="mb-6 flex gap-1 rounded-2xl bg-slate-100/80 p-1.5 backdrop-blur">
-              {TABS.map((tab) => (
+              {TABS.filter((tab) => tab.key !== 'collaborate' || isTripOwner).map((tab) => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
                     activeTab === tab.key
@@ -881,7 +896,7 @@ export default function PlanTrip() {
                             <span className="text-xs font-semibold text-slate-500">Split:</span>
                             {[
                               { value: 'equal', label: '➗ Equal' },
-                              { value: 'full', label: '👤 Full (payer only)' },
+                              { value: 'full', label: '👤 No Split (personal)' },
                             ].map((opt) => (
                               <button key={opt.value} type="button"
                                 onClick={() => setExpForm({ ...expForm, splitType: opt.value })}
@@ -1256,9 +1271,16 @@ export default function PlanTrip() {
                         {/* Title row */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-display text-base font-bold text-slate-900 truncate group-hover:text-cyan-700 transition-colors">
-                              {trip.title}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-display text-base font-bold text-slate-900 truncate group-hover:text-cyan-700 transition-colors">
+                                {trip.title}
+                              </h3>
+                              {trip.userId !== user?._id && (
+                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-600 ring-1 ring-purple-200">
+                                  🤝 Collab
+                                </span>
+                              )}
+                            </div>
                             {trip.destinations.length > 0 && (
                               <p className="mt-0.5 text-xs text-slate-400 truncate">📍 {trip.destinations.join(' → ')}</p>
                             )}
@@ -1324,6 +1346,7 @@ export default function PlanTrip() {
                       {/* Card footer */}
                       <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 bg-slate-50/30">
                         <span className="text-xs font-bold text-cyan-600 group-hover:underline">View Details →</span>
+                        {trip.userId === user?._id ? (
                         <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => handleDuplicate(trip)} title="Duplicate"
                             className="rounded-lg p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-600 hover:shadow-sm">
@@ -1342,6 +1365,9 @@ export default function PlanTrip() {
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-purple-500 uppercase tracking-wider">Collaborator</span>
+                        )}
                       </div>
                     </div>
                   );
