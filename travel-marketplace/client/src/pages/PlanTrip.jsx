@@ -914,7 +914,7 @@ export default function PlanTrip() {
                             ))}
                           </div>
                           {/* Select specific people for equal split */}
-                          {expForm.splitType === 'equal' && trip.travelerNames.length >= 3 && (
+                          {expForm.splitType === 'equal' && trip.travelerNames.length >= 2 && (
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-[11px] text-slate-400">Split among:</span>
                               {trip.travelerNames.map((name) => {
@@ -922,12 +922,17 @@ export default function PlanTrip() {
                                 return (
                                   <button key={name} type="button"
                                     onClick={() => {
-                                      const current = expForm.splitAmong.length === 0 ? [...trip.travelerNames] : [...expForm.splitAmong];
-                                      const updated = current.includes(name)
-                                        ? current.filter((n) => n !== name)
-                                        : [...current, name];
-                                      // If all selected or none, reset to empty (= all)
-                                      setExpForm({ ...expForm, splitAmong: updated.length === trip.travelerNames.length ? [] : updated });
+                                      let current = expForm.splitAmong.length === 0 ? [...trip.travelerNames] : [...expForm.splitAmong];
+                                      let updated;
+                                      if (current.includes(name)) {
+                                        // Don't allow deselecting if only 1 person left
+                                        if (current.length <= 1) return;
+                                        updated = current.filter((n) => n !== name);
+                                      } else {
+                                        updated = [...current, name];
+                                      }
+                                      // If all selected, reset to empty (= all)
+                                      setExpForm({ ...expForm, splitAmong: updated.length >= trip.travelerNames.length ? [] : updated });
                                     }}
                                     className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
                                       isSelected
@@ -985,16 +990,30 @@ export default function PlanTrip() {
                 {/* Per-person breakdown */}
                 {trip.travelerNames?.length > 0 && (trip.dailyExpenses || []).length > 0 && (() => {
                   const pd = {};
-                  trip.travelerNames.forEach((n) => { pd[n] = { total: 0, count: 0, cats: {} }; });
+                  trip.travelerNames.forEach((n) => { pd[n] = { paid: 0, share: 0, count: 0, cats: {} }; });
                   let unassigned = { total: 0, count: 0 };
                   (trip.dailyExpenses || []).forEach((e) => {
+                    // Track what each person PAID
                     if (e.paidBy && pd[e.paidBy]) {
-                      pd[e.paidBy].total += e.amount;
+                      pd[e.paidBy].paid += e.amount;
                       pd[e.paidBy].count++;
                       pd[e.paidBy].cats[e.category] = (pd[e.paidBy].cats[e.category] || 0) + e.amount;
                     } else { unassigned.total += e.amount; unassigned.count++; }
+                    // Track what each person OWES (their fair share)
+                    if (e.splitType === 'full') {
+                      // Personal — only the payer owes
+                      if (e.paidBy && pd[e.paidBy]) pd[e.paidBy].share += e.amount;
+                    } else if (e.splitType === 'custom' && e.customSplits?.length > 0) {
+                      e.customSplits.forEach((s) => { if (pd[s.name]) pd[s.name].share += s.amount; });
+                    } else {
+                      // Equal split — respect splitAmong
+                      const participants = (e.splitAmong && e.splitAmong.length > 0)
+                        ? e.splitAmong.filter((n) => !!pd[n])
+                        : trip.travelerNames;
+                      const perPerson = e.amount / participants.length;
+                      participants.forEach((n) => { pd[n].share += perPerson; });
+                    }
                   });
-                  const eqShare = dailyExpTotal / trip.travelerNames.length;
 
                   return (
                     <div className="rounded-2xl border border-slate-200/60 bg-white shadow-card overflow-hidden">
@@ -1005,7 +1024,7 @@ export default function PlanTrip() {
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                           {trip.travelerNames.map((name) => {
                             const p = pd[name];
-                            const diff = p.total - eqShare;
+                            const diff = p.paid - p.share; // positive = overpaid (owed money), negative = underpaid (owes money)
                             const topCat = Object.entries(p.cats).sort((a, b) => b[1] - a[1])[0];
                             return (
                               <div key={name} className="rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50/80 to-white p-4 space-y-2.5 transition hover:shadow-card">
@@ -1016,20 +1035,20 @@ export default function PlanTrip() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">{name}</span>
                                   </div>
-                                  <span className="font-display text-lg font-bold text-slate-900">{formatCurrency(p.total, trip.currency)}</span>
+                                  <span className="font-display text-lg font-bold text-slate-900">{formatCurrency(p.paid, trip.currency)}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
-                                  <span className="text-slate-400">{p.count} expense{p.count !== 1 ? 's' : ''}</span>
+                                  <span className="text-slate-400">{p.count} expense{p.count !== 1 ? 's' : ''} · Share: {formatCurrency(p.share, trip.currency)}</span>
                                   <span className={`rounded-full px-2 py-0.5 font-bold ${
-                                    diff > 0 ? 'bg-rose-50 text-rose-600' : diff < 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                                    diff > 0.01 ? 'bg-emerald-50 text-emerald-600' : diff < -0.01 ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
                                   }`}>
-                                    {diff > 0 ? `↑ ${formatCurrency(diff, trip.currency)}` : diff < 0 ? `↓ ${formatCurrency(Math.abs(diff), trip.currency)}` : 'Average'}
+                                    {diff > 0.01 ? `Overpaid ${formatCurrency(diff, trip.currency)}` : diff < -0.01 ? `Owes ${formatCurrency(Math.abs(diff), trip.currency)}` : 'Settled'}
                                   </span>
                                 </div>
                                 {topCat && <p className="text-[11px] text-slate-400">Top: {CATEGORY_ICONS[topCat[0]]} {topCat[0]} ({formatCurrency(topCat[1], trip.currency)})</p>}
                                 <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                                   <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all"
-                                    style={{ width: `${dailyExpTotal > 0 ? Math.min((p.total / dailyExpTotal) * 100, 100) : 0}%` }} />
+                                    style={{ width: `${dailyExpTotal > 0 ? Math.min((p.paid / dailyExpTotal) * 100, 100) : 0}%` }} />
                                 </div>
                               </div>
                             );
@@ -1043,7 +1062,7 @@ export default function PlanTrip() {
                         )}
                         <div className="flex items-center gap-2 rounded-xl bg-cyan-50 p-3.5 text-sm text-cyan-700 ring-1 ring-cyan-100">
                           <span>💡</span>
-                          <span>Equal share: <strong>{formatCurrency(eqShare, trip.currency)}</strong> per person</span>
+                          <span>Paid = what they spent · Share = what they owe based on splits</span>
                         </div>
                       </div>
                     </div>

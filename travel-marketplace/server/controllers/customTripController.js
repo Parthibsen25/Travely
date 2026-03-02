@@ -250,7 +250,7 @@ exports.addExpense = async (req, res) => {
     const { trip } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
-    const { date, category, description, amount, paymentMethod, paidBy } = req.body;
+    const { date, category, description, amount, paymentMethod, paidBy, splitType, splitAmong, customSplits } = req.body;
     if (!category || !description || !amount || amount <= 0) {
       return res.status(400).json({ message: 'Category, description and valid amount are required' });
     }
@@ -261,7 +261,10 @@ exports.addExpense = async (req, res) => {
       description: description.trim(),
       amount: Number(amount),
       paymentMethod: paymentMethod || 'cash',
-      paidBy: paidBy || ''
+      paidBy: paidBy || '',
+      splitType: splitType || 'equal',
+      splitAmong: splitAmong || [],
+      customSplits: customSplits || []
     });
 
     await trip.save();
