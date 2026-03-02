@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const BUDGET_CATEGORIES = ['Transport', 'Accommodation', 'Food', 'Activities', 'Shopping', 'Insurance', 'Visa', 'Other'];
 
@@ -25,12 +26,27 @@ const DailyExpenseSchema = new mongoose.Schema({
     enum: ['cash', 'card', 'upi', 'other'],
     default: 'cash'
   },
-  paidBy: { type: String, trim: true, default: '' }
+  paidBy: { type: String, trim: true, default: '' },
+  // Split configuration for this expense
+  splitType: { type: String, enum: ['equal', 'custom', 'full'], default: 'equal' },
+  splitAmong: [{ type: String, trim: true }],  // who shares this expense (empty = all travelers)
+  customSplits: [{
+    name: { type: String, trim: true },
+    amount: { type: Number, min: 0 }
+  }]
 }, { timestamps: true });
 
 const ChecklistItemSchema = new mongoose.Schema({
   text: { type: String, required: true },
   checked: { type: Boolean, default: false }
+});
+
+const CollaboratorSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  name: { type: String, trim: true },
+  email: { type: String, trim: true, lowercase: true },
+  role: { type: String, enum: ['editor', 'viewer'], default: 'editor' },
+  joinedAt: { type: Date, default: Date.now }
 });
 
 const CustomTripSchema = new mongoose.Schema(
@@ -55,7 +71,11 @@ const CustomTripSchema = new mongoose.Schema(
       type: String,
       enum: ['PLANNING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'],
       default: 'PLANNING'
-    }
+    },
+    // Collaborative features
+    shareToken: { type: String, unique: true, sparse: true },
+    isShared: { type: Boolean, default: false },
+    collaborators: [CollaboratorSchema]
   },
   { timestamps: true }
 );

@@ -4,6 +4,9 @@ import { apiFetch } from '../utils/api';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/Modal';
 import Loading from '../components/Loading';
+import SplitBills from '../components/SplitBills';
+import BudgetOptimizer from '../components/BudgetOptimizer';
+import CollaborativeShare from '../components/CollaborativeShare';
 
 /* ═══════════════════════════════════════════════════════════════════════
    Constants & helpers
@@ -39,7 +42,9 @@ const TABS = [
   { key: 'overview', label: 'Overview', icon: '📊' },
   { key: 'budget', label: 'Budget', icon: '💰' },
   { key: 'expenses', label: 'Expenses', icon: '💳' },
-  { key: 'checklist', label: 'Checklist', icon: '✅' }
+  { key: 'checklist', label: 'Checklist', icon: '✅' },
+  { key: 'splits', label: 'Split Bills', icon: '💸' },
+  { key: 'collaborate', label: 'Collaborate', icon: '🤝' }
 ];
 
 function formatCurrency(amount, currency = 'INR') {
@@ -143,14 +148,16 @@ export default function PlanTrip() {
   // Expense form
   const [expForm, setExpForm] = useState({
     date: new Date().toISOString().slice(0, 10),
-    category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: ''
+    category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: '',
+    splitType: 'equal'
   });
   const [addingExpense, setAddingExpense] = useState(false);
 
   // Editing expense
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [editExpForm, setEditExpForm] = useState({
-    date: '', category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: ''
+    date: '', category: 'Food', description: '', amount: '', paymentMethod: 'upi', paidBy: '',
+    splitType: 'equal'
   });
 
   // Checklist
@@ -159,6 +166,9 @@ export default function PlanTrip() {
   // Share
   const [shareText, setShareText] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+
+  // Budget Optimizer
+  const [showOptimizer, setShowOptimizer] = useState(false);
 
   /* ─── Computed values (above conditional returns) ────────────────── */
   const trip = selectedTrip;
@@ -393,6 +403,31 @@ export default function PlanTrip() {
     }
   }
 
+  /* ─── Budget Optimizer Handler ─────────────────────────────────── */
+  function handleOptimizerApply(optimizedData) {
+    setForm({
+      ...emptyForm,
+      title: optimizedData.title || '',
+      destinations: optimizedData.destination ? [optimizedData.destination] : [''],
+      travelers: optimizedData.travelers || 1,
+      travelerNames: [],
+      budgetItems: (optimizedData.budgetItems || []).map((b) => ({
+        category: b.category, description: b.description || b.category,
+        amount: b.amount, actualAmount: 0, isPaid: false
+      })),
+      budgetLimit: optimizedData.totalBudget || 0,
+    });
+    setEditingTrip(null);
+    setShowModal(true);
+    showToast('Budget applied! Review and save your trip.', 'success');
+  }
+
+  /* ─── Collaborative Trip Update Handler ─────────────────────────── */
+  function handleTripUpdate(updatedTrip) {
+    setSelectedTrip(updatedTrip);
+    setTrips((prev) => prev.map((t) => t._id === updatedTrip._id ? updatedTrip : t));
+  }
+
   /* ─── Expense Handlers ─────────────────────────────────────────── */
   async function handleAddExpense(tripId) {
     if (!expForm.description.trim() || !expForm.amount || Number(expForm.amount) <= 0) {
@@ -406,12 +441,13 @@ export default function PlanTrip() {
         body: JSON.stringify({
           date: expForm.date, category: expForm.category,
           description: expForm.description.trim(), amount: Number(expForm.amount),
-          paymentMethod: expForm.paymentMethod, paidBy: expForm.paidBy
+          paymentMethod: expForm.paymentMethod, paidBy: expForm.paidBy,
+          splitType: expForm.splitType || 'equal'
         })
       });
       setSelectedTrip(result.trip);
       setTrips((prev) => prev.map((t) => t._id === tripId ? result.trip : t));
-      setExpForm({ ...expForm, description: '', amount: '' });
+      setExpForm({ ...expForm, description: '', amount: '', splitType: 'equal' });
       showToast('Expense added', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to add expense', 'error');
@@ -437,7 +473,7 @@ export default function PlanTrip() {
       date: exp.date ? new Date(exp.date).toISOString().slice(0, 10) : '',
       category: exp.category, description: exp.description,
       amount: exp.amount, paymentMethod: exp.paymentMethod || 'cash',
-      paidBy: exp.paidBy || ''
+      paidBy: exp.paidBy || '', splitType: exp.splitType || 'equal'
     });
   }
   function cancelEditExpense() { setEditingExpenseId(null); }
@@ -453,7 +489,8 @@ export default function PlanTrip() {
         body: JSON.stringify({
           date: editExpForm.date, category: editExpForm.category,
           description: editExpForm.description.trim(), amount: Number(editExpForm.amount),
-          paymentMethod: editExpForm.paymentMethod, paidBy: editExpForm.paidBy
+          paymentMethod: editExpForm.paymentMethod, paidBy: editExpForm.paidBy,
+          splitType: editExpForm.splitType || 'equal'
         })
       });
       setSelectedTrip(result.trip);
@@ -838,7 +875,26 @@ export default function PlanTrip() {
                       )}
                     </div>
                     {trip.travelerNames?.length > 0 && (
-                      <div className="mt-3 flex justify-end">
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        {trip.travelerNames.length >= 2 && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-slate-500">Split:</span>
+                            {[
+                              { value: 'equal', label: '➗ Equal' },
+                              { value: 'full', label: '👤 Full (payer only)' },
+                            ].map((opt) => (
+                              <button key={opt.value} type="button"
+                                onClick={() => setExpForm({ ...expForm, splitType: opt.value })}
+                                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                                  expForm.splitType === opt.value
+                                    ? 'bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200'
+                                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                                }`}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                         <button onClick={() => handleAddExpense(trip._id)} disabled={addingExpense}
                           className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-600/20 transition hover:shadow-xl hover:brightness-105 disabled:opacity-60">
                           {addingExpense ? '...' : '+ Add Expense'}
@@ -1016,6 +1072,11 @@ export default function PlanTrip() {
                                         👤 {exp.paidBy}
                                       </span>
                                     )}
+                                    {exp.splitType && exp.splitType !== 'equal' && (
+                                      <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-100">
+                                        {exp.splitType === 'full' ? '👤 Full' : '✂️ Custom'}
+                                      </span>
+                                    )}
                                   </p>
                                 </div>
                                 <span className="shrink-0 text-sm font-bold text-slate-900">{formatCurrency(exp.amount, trip.currency)}</span>
@@ -1118,6 +1179,18 @@ export default function PlanTrip() {
                 </div>
               </div>
             )}
+
+            {/* ════════════ Split Bills Tab ════════════ */}
+            {activeTab === 'splits' && (
+              <SplitBills trip={trip} onUpdate={handleTripUpdate} />
+            )}
+
+            {/* ════════════ Collaborate Tab ════════════ */}
+            {activeTab === 'collaborate' && (
+              <div className="space-y-5 animate-page-enter">
+                <CollaborativeShare trip={trip} onUpdate={handleTripUpdate} />
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -1143,6 +1216,10 @@ export default function PlanTrip() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3 sm:shrink-0">
+                  <button onClick={() => setShowOptimizer(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/25 transition hover:shadow-xl hover:brightness-105">
+                    ✨ AI Optimizer
+                  </button>
                   <button onClick={() => setShowTemplateModal(true)}
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-card transition hover:shadow-md hover:border-slate-300">
                     📋 Templates
@@ -1523,6 +1600,13 @@ export default function PlanTrip() {
           </div>
         </form>
       </Modal>
+
+      {/* ── Budget Optimizer Modal ── */}
+      <BudgetOptimizer
+        isOpen={showOptimizer}
+        onClose={() => setShowOptimizer(false)}
+        onApplyBudget={handleOptimizerApply}
+      />
     </>
   );
 }

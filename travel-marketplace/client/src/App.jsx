@@ -28,6 +28,7 @@ import Profile from './pages/Profile';
 import PlanTrip from './pages/PlanTrip';
 import ChatPage from './pages/ChatPage';
 import ReferralPage from './pages/ReferralPage';
+import SharedTripPage from './pages/SharedTripPage';
 
 import AgencyDashboard from './pages/AgencyDashboard';
 import AgencyPackages from './pages/AgencyPackages';
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="admin/login" element={<AdminLogin />} />
         <Route path="agency/login" element={<AgencyLogin />} />
         <Route path="agency/register" element={<AgencyRegister />} />
+        <Route path="app/shared-trip/:token" element={<SharedTripPage />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={['USER']} />}>
