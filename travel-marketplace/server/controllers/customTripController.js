@@ -18,6 +18,31 @@ async function findTripAsOwnerOrEditor(tripId, userId) {
   return { trip: null, isOwner: false };
 }
 
+/* ─── Helper: find trip as owner OR any collaborator (including viewer) ─ */
+async function findTripAsOwnerOrCollaborator(tripId, userId) {
+  let trip = await CustomTrip.findOne({ _id: tripId, userId });
+  if (trip) return { trip, isOwner: true, role: 'owner' };
+  trip = await CustomTrip.findOne({
+    _id: tripId,
+    'collaborators.userId': userId,
+  });
+  if (trip) {
+    const collab = trip.collaborators.find(c => c.userId && c.userId.toString() === userId);
+    return { trip, isOwner: false, role: collab?.role || 'viewer' };
+  }
+  return { trip: null, isOwner: false, role: null };
+}
+
+/* ─── Helper: add activity log entry ──────────────────────────────────── */
+function addLogEntry(trip, action, userId, userName, details) {
+  if (!trip.activityLog) trip.activityLog = [];
+  trip.activityLog.push({ action, userId, userName: userName || '', details: details || '', timestamp: new Date() });
+  // Keep last 100 entries only
+  if (trip.activityLog.length > 100) {
+    trip.activityLog = trip.activityLog.slice(-100);
+  }
+}
+
 /* ─── Budget Templates ────────────────────────────────────────────────── */
 const BUDGET_TEMPLATES = [
   {
@@ -213,13 +238,21 @@ exports.updateTrip = async (req, res) => {
     if (status !== undefined) trip.status = status;
 
     // New fields
-    const { budgetLimit, currency, tags, checklist } = req.body;
+    const { budgetLimit, currency, tags, checklist, itinerary } = req.body;
     if (budgetLimit !== undefined) trip.budgetLimit = budgetLimit;
     if (currency !== undefined) trip.currency = currency;
     if (tags !== undefined) trip.tags = tags;
     if (checklist !== undefined) trip.checklist = checklist;
+    if (itinerary !== undefined) trip.itinerary = itinerary;
+
+    addLogEntry(trip, 'trip_updated', req.user.id, req.user.name || '', 'Updated trip details');
 
     await trip.save();
+
+    // Real-time update to collaborators
+    const io = req.app.get('io');
+    if (io) io.to(`trip_${trip._id}`).emit('trip_updated', { trip, updatedBy: req.user.id });
+
     res.json({ trip });
   } catch (err) {
     console.error(err);
@@ -267,7 +300,13 @@ exports.addExpense = async (req, res) => {
       customSplits: customSplits || []
     });
 
+    addLogEntry(trip, 'added_expense', req.user.id, req.user.name || '', `Added expense: ${description.trim()} (₹${amount})`);
+
     await trip.save();
+
+    const io = req.app.get('io');
+    if (io) io.to(`trip_${trip._id}`).emit('trip_updated', { trip, updatedBy: req.user.id });
+
     res.status(201).json({ trip });
   } catch (err) {
     console.error(err);
@@ -281,11 +320,20 @@ exports.removeExpense = async (req, res) => {
     const { trip } = await findTripAsOwnerOrEditor(req.params.id, req.user.id);
     if (!trip) return res.status(404).json({ message: 'Trip not found' });
 
+    const removed = trip.dailyExpenses.find(e => e._id.toString() === req.params.expenseId);
     trip.dailyExpenses = trip.dailyExpenses.filter(
       (e) => e._id.toString() !== req.params.expenseId
     );
 
+    if (removed) {
+      addLogEntry(trip, 'removed_expense', req.user.id, req.user.name || '', `Removed expense: ${removed.description} (₹${removed.amount})`);
+    }
+
     await trip.save();
+
+    const io = req.app.get('io');
+    if (io) io.to(`trip_${trip._id}`).emit('trip_updated', { trip, updatedBy: req.user.id });
+
     res.json({ trip });
   } catch (err) {
     console.error(err);
@@ -629,9 +677,11 @@ exports.inviteCollaborator = async (req, res) => {
       userId: invitedUser._id,
       name: invitedUser.name,
       email: invitedUser.email,
-      role: 'editor',
+      role: req.body.role === 'viewer' ? 'viewer' : 'editor',
       joinedAt: new Date()
     });
+
+    addLogEntry(trip, 'invited_collaborator', req.user.id, req.user.name || '', `Invited ${invitedUser.name} as ${req.body.role === 'viewer' ? 'viewer' : 'editor'}`);
 
     // Auto-enable sharing so shared-token routes also work
     if (!trip.shareToken) {
@@ -781,6 +831,55 @@ function computeSettlements(trip) {
 
   return { settlements, personSummary };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACTIVITY LOG
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// GET /api/custom-trips/:id/activity-log — get activity log (owner or collaborator)
+exports.getActivityLog = async (req, res) => {
+  try {
+    const { trip } = await findTripAsOwnerOrCollaborator(req.params.id, req.user.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    const log = (trip.activityLog || [])
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 50);
+    res.json({ log });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COLLABORATOR ROLE UPDATE
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// PUT /api/custom-trips/:id/collaborators/:collabId/role — update role (owner only)
+exports.updateCollaboratorRole = async (req, res) => {
+  try {
+    const trip = await CustomTrip.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+    const collab = trip.collaborators.id(req.params.collabId);
+    if (!collab) return res.status(404).json({ message: 'Collaborator not found' });
+
+    const { role } = req.body;
+    if (!role || !['editor', 'viewer'].includes(role)) {
+      return res.status(400).json({ message: 'Role must be editor or viewer' });
+    }
+
+    collab.role = role;
+    addLogEntry(trip, 'changed_role', req.user.id, req.user.name || '', `Changed ${collab.name || 'collaborator'} to ${role}`);
+    await trip.save();
+    await trip.populate('collaborators.userId', 'name email');
+    res.json({ trip });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 /* ═══════════════════════════════════════════════════════════════════════
    AI BUDGET OPTIMIZER

@@ -1,6 +1,10 @@
 const Package = require('../models/Package');
 const { getCommissionPercentForAgency } = require('./commissionService');
-const { getBookingTotalAmount } = require('./bookingAmountService');
+
+// Helper: extract total amount from a booking object
+function getBookingTotalAmount(booking) {
+  return booking.finalAmount || 0;
+}
 
 /**
  * Compute cancellation refund details for a booking.

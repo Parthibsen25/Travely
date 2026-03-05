@@ -99,6 +99,11 @@ export default function Login() {
                 className="focus-ring w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition-colors focus:bg-white"
                 placeholder="Enter password"
               />
+              <div className="mt-1 text-right">
+                <Link to="/forgot-password" className="text-xs font-medium text-cyan-600 transition hover:text-cyan-700">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             {error && (

@@ -40,7 +40,16 @@ const PackageSchema = new mongoose.Schema(
     hotelStarRating: { type: Number, min: 1, max: 5 },
     cities: [{ type: String }],
     nightCount: { type: Number },
-    customizable: { type: Boolean, default: true }
+    customizable: { type: Boolean, default: true },
+
+    // Map coordinates for map integration
+    coordinates: {
+      lat: { type: Number },
+      lng: { type: Number }
+    },
+
+    // Dynamic pricing flags
+    dynamicPricingEnabled: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

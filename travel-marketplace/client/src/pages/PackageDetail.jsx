@@ -291,7 +291,6 @@ export default function PackageDetail() {
                 </div>
               </div>
             )}
-
             {/* Cancellation Policy */}
             {packageData.cancellationPolicy && packageData.cancellationPolicy.length > 0 && (
               <div>

@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, agencyRegister, agencyLogin, logout, me, updateMe, changePassword } = require('../controllers/authController');
+const {
+  register, login, agencyRegister, agencyLogin, logout, me, updateMe, changePassword,
+  forgotPassword, resetPassword, verifyEmail, resendVerification
+} = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
@@ -12,5 +15,13 @@ router.post('/logout', logout);
 router.get('/me', me);
 router.put('/me', protect, authorizeRoles('USER', 'AGENCY'), updateMe);
 router.put('/change-password', protect, authorizeRoles('USER', 'AGENCY'), changePassword);
+
+// Password reset (public)
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+
+// Email verification
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', protect, authorizeRoles('USER'), resendVerification);
 
 module.exports = router;

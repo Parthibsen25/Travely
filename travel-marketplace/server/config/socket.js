@@ -47,6 +47,15 @@ function setupSocket(server, corsOptions) {
       socket.leave(`conv_${conversationId}`);
     });
 
+    // ── Trip collaboration rooms ──
+    socket.on('join_trip', (tripId) => {
+      socket.join(`trip_${tripId}`);
+    });
+
+    socket.on('leave_trip', (tripId) => {
+      socket.leave(`trip_${tripId}`);
+    });
+
     // Typing indicators
     socket.on('typing', ({ conversationId }) => {
       socket.to(`conv_${conversationId}`).emit('user_typing', {

@@ -71,10 +71,10 @@ export default function SplitBills({ trip, onUpdate }) {
   if (names.length < 2) {
     return (
       <div className="space-y-5 animate-page-enter">
-        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
-          <span className="text-4xl">👥</span>
-          <h3 className="mt-3 text-lg font-semibold text-slate-700">Add at least 2 travelers</h3>
-          <p className="mt-1 text-sm text-slate-400">
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-5 py-8 text-center sm:p-12">
+          <span className="text-2xl sm:text-4xl">👥</span>
+          <h3 className="mt-2 text-sm font-semibold text-slate-700 sm:mt-3 sm:text-lg">Add at least 2 travelers</h3>
+          <p className="mt-1 text-[11px] text-slate-400 sm:text-sm">
             Edit your trip and add traveler names to enable the split bills feature.
           </p>
         </div>
@@ -86,10 +86,10 @@ export default function SplitBills({ trip, onUpdate }) {
   if (!hasExpenses) {
     return (
       <div className="space-y-5 animate-page-enter">
-        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
-          <span className="text-4xl">💳</span>
-          <h3 className="mt-3 text-lg font-semibold text-slate-700">No expenses to split</h3>
-          <p className="mt-1 text-sm text-slate-400">
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-5 py-8 text-center sm:p-12">
+          <span className="text-2xl sm:text-4xl">💳</span>
+          <h3 className="mt-2 text-sm font-semibold text-slate-700 sm:mt-3 sm:text-lg">No expenses to split</h3>
+          <p className="mt-1 text-[11px] text-slate-400 sm:text-sm">
             Log expenses in the Expenses tab first, then come back to see who owes whom.
           </p>
         </div>
@@ -108,17 +108,17 @@ export default function SplitBills({ trip, onUpdate }) {
   const totalExpenses = (trip.dailyExpenses || []).reduce((s, e) => s + e.amount, 0);
 
   return (
-    <div className="space-y-5 animate-page-enter">
+    <div className="space-y-4 animate-page-enter sm:space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="font-display text-lg font-bold text-slate-900">Split Bills</h3>
-          <p className="text-sm text-slate-500">
+          <h3 className="font-display text-base font-bold text-slate-900 sm:text-lg">Split Bills</h3>
+          <p className="text-xs text-slate-500 sm:text-sm">
             {names.length} travelers · {(trip.dailyExpenses || []).length} expenses · {formatCurrency(totalExpenses, currency)} total
           </p>
         </div>
         <button onClick={copySummary}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-card transition hover:shadow-md">
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-card transition hover:shadow-md active:scale-95 sm:px-4 sm:text-sm">
           {copied ? '✓ Copied' : '📋 Copy Summary'}
         </button>
       </div>
@@ -127,23 +127,23 @@ export default function SplitBills({ trip, onUpdate }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {personSummary.map((p) => (
           <div key={p.name}
-            className={`rounded-2xl border p-5 shadow-card transition ${
+            className={`rounded-2xl border p-3.5 shadow-card transition sm:p-5 ${
               p.balance > 0 ? 'border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white'
                 : p.balance < 0 ? 'border-rose-200 bg-gradient-to-br from-rose-50/80 to-white'
                 : 'border-slate-200 bg-white'
             }`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-md ${
+            <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+              <div className="flex items-center gap-2">
+                <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shadow-md sm:h-10 sm:w-10 sm:text-sm ${
                   p.balance > 0 ? 'bg-gradient-to-br from-emerald-500 to-emerald-600'
                     : p.balance < 0 ? 'bg-gradient-to-br from-rose-500 to-rose-600'
                     : 'bg-gradient-to-br from-slate-400 to-slate-500'
                 }`}>
                   {p.name.charAt(0).toUpperCase()}
                 </span>
-                <span className="text-sm font-bold text-slate-800">{p.name}</span>
+                <span className="text-xs font-bold text-slate-800 sm:text-sm">{p.name}</span>
               </div>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold sm:px-3 sm:py-1 sm:text-xs ${
                 p.balance > 0 ? 'bg-emerald-100 text-emerald-700'
                   : p.balance < 0 ? 'bg-rose-100 text-rose-700'
                   : 'bg-slate-100 text-slate-600'
@@ -152,18 +152,18 @@ export default function SplitBills({ trip, onUpdate }) {
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg bg-white/80 p-2">
-                <p className="text-[10px] font-semibold uppercase text-slate-400">Paid</p>
-                <p className="text-sm font-bold text-slate-900">{formatCurrency(p.paid, currency)}</p>
+            <div className="grid grid-cols-3 gap-1.5 text-center sm:gap-2">
+              <div className="rounded-lg bg-white/80 p-1.5 sm:p-2">
+                <p className="text-[9px] font-semibold uppercase text-slate-400 sm:text-[10px]">Paid</p>
+                <p className="text-xs font-bold text-slate-900 sm:text-sm">{formatCurrency(p.paid, currency)}</p>
               </div>
-              <div className="rounded-lg bg-white/80 p-2">
-                <p className="text-[10px] font-semibold uppercase text-slate-400">Share</p>
-                <p className="text-sm font-bold text-slate-900">{formatCurrency(p.owes, currency)}</p>
+              <div className="rounded-lg bg-white/80 p-1.5 sm:p-2">
+                <p className="text-[9px] font-semibold uppercase text-slate-400 sm:text-[10px]">Share</p>
+                <p className="text-xs font-bold text-slate-900 sm:text-sm">{formatCurrency(p.owes, currency)}</p>
               </div>
-              <div className="rounded-lg bg-white/80 p-2">
-                <p className="text-[10px] font-semibold uppercase text-slate-400">Net</p>
-                <p className={`text-sm font-bold ${
+              <div className="rounded-lg bg-white/80 p-1.5 sm:p-2">
+                <p className="text-[9px] font-semibold uppercase text-slate-400 sm:text-[10px]">Net</p>
+                <p className={`text-xs font-bold sm:text-sm ${
                   p.balance > 0 ? 'text-emerald-600' : p.balance < 0 ? 'text-rose-600' : 'text-slate-600'
                 }`}>
                   {p.balance >= 0 ? '+' : ''}{formatCurrency(p.balance, currency)}
@@ -177,41 +177,41 @@ export default function SplitBills({ trip, onUpdate }) {
       {/* Settlement Transactions */}
       {settlements.length > 0 ? (
         <div className="rounded-2xl border border-slate-200/60 bg-white shadow-card overflow-hidden">
-          <div className="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4">
-            <h3 className="font-display text-base font-bold text-slate-900 flex items-center gap-2">
+          <div className="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 sm:px-6 sm:py-4">
+            <h3 className="font-display text-sm font-bold text-slate-900 flex items-center gap-2 sm:text-base">
               💸 Settlement Plan
-              <span className="text-xs font-normal text-slate-500">
+              <span className="text-[10px] font-normal text-slate-500 sm:text-xs">
                 ({settlements.length} transaction{settlements.length !== 1 ? 's' : ''})
               </span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Minimal transfers to settle all debts</p>
+            <p className="text-[11px] text-slate-500 mt-0.5 sm:text-xs">Minimal transfers to settle all debts</p>
           </div>
           <div className="divide-y divide-slate-50">
             {settlements.map((s, i) => (
-              <div key={i} className="flex items-center gap-4 px-6 py-4 transition hover:bg-slate-50/40">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-700">
+              <div key={i} className="flex items-center gap-2.5 px-3.5 py-3 transition hover:bg-slate-50/40 sm:gap-4 sm:px-6 sm:py-4">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[10px] font-bold text-rose-700 sm:h-8 sm:w-8 sm:text-xs">
                   {s.from.charAt(0).toUpperCase()}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-800">{s.from}</span>
-                    <svg className="h-4 w-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="text-xs font-bold text-slate-800 truncate sm:text-sm">{s.from}</span>
+                    <svg className="h-3.5 w-3.5 shrink-0 text-slate-300 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
-                    <span className="text-sm font-bold text-slate-800">{s.to}</span>
+                    <span className="text-xs font-bold text-slate-800 truncate sm:text-sm">{s.to}</span>
                   </div>
-                  <p className="text-xs text-slate-400">pays</p>
+                  <p className="text-[10px] text-slate-400 sm:text-xs">pays</p>
                 </div>
-                <span className="text-lg font-bold text-amber-600">{formatCurrency(s.amount, currency)}</span>
+                <span className="shrink-0 text-sm font-bold text-amber-600 sm:text-lg">{formatCurrency(s.amount, currency)}</span>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-          <span className="text-3xl">✅</span>
-          <h3 className="mt-2 text-base font-bold text-emerald-700">All settled!</h3>
-          <p className="text-sm text-emerald-600">Everyone has paid their fair share.</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center sm:p-6">
+          <span className="text-2xl sm:text-3xl">✅</span>
+          <h3 className="mt-1.5 text-sm font-bold text-emerald-700 sm:mt-2 sm:text-base">All settled!</h3>
+          <p className="text-xs text-emerald-600 sm:text-sm">Everyone has paid their fair share.</p>
         </div>
       )}
 
@@ -221,13 +221,13 @@ export default function SplitBills({ trip, onUpdate }) {
         if (unassigned.length === 0) return null;
         const total = unassigned.reduce((s, e) => s + e.amount, 0);
         return (
-          <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <span className="text-xl">⚠️</span>
+          <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:items-center sm:gap-3 sm:p-4">
+            <span className="text-base sm:text-xl">⚠️</span>
             <div>
-              <p className="text-sm font-semibold text-amber-800">
+              <p className="text-xs font-semibold text-amber-800 sm:text-sm">
                 {unassigned.length} expense{unassigned.length !== 1 ? 's' : ''} ({formatCurrency(total, currency)}) not assigned to any traveler
               </p>
-              <p className="text-xs text-amber-600 mt-0.5">
+              <p className="text-[10px] text-amber-600 mt-0.5 sm:text-xs">
                 Go to the Expenses tab and set "Who paid?" for accurate split calculations.
               </p>
             </div>
@@ -236,9 +236,9 @@ export default function SplitBills({ trip, onUpdate }) {
       })()}
 
       {/* How it works */}
-      <div className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-card">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">How Split Bills Works</h4>
-        <div className="grid gap-3 sm:grid-cols-3 text-center">
+      <div className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-card sm:p-5">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2.5 sm:text-xs sm:mb-3">How Split Bills Works</h4>
+        <div className="grid gap-2 sm:grid-cols-3 sm:gap-3 text-center">
           {[
             { icon: '💳', title: 'Track who paid', desc: 'Set "Paid by" on each expense' },
             { icon: '➗', title: 'Equal splits', desc: 'Each expense splits equally among travelers' },

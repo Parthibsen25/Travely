@@ -124,16 +124,16 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center animate-page-enter">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center animate-page-enter">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative z-10 mx-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200/60 bg-white shadow-2xl">
+      <div className="relative z-10 w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-slate-200/60 bg-white shadow-2xl sm:mx-4 sm:max-w-2xl sm:rounded-3xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-violet-50 via-purple-50 to-indigo-50 px-6 py-4 rounded-t-3xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-violet-50 via-purple-50 to-indigo-50 px-4 py-3 rounded-t-3xl sm:px-6 sm:py-4">
           <div>
-            <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="font-display text-base font-bold text-slate-900 flex items-center gap-2 sm:text-xl">
               ✨ AI Budget Optimizer
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">Get a smart budget breakdown for your destination</p>
+            <p className="text-[11px] text-slate-500 mt-0.5 sm:text-xs">Get a smart budget breakdown for your destination</p>
           </div>
           <button onClick={handleClose} className="rounded-xl p-2 text-slate-400 hover:bg-white/60 hover:text-slate-600 transition">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,12 +142,12 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {step === 1 && (
-            <div className="space-y-5 animate-page-enter">
+            <div className="space-y-4 animate-page-enter sm:space-y-5">
               {/* Destination */}
               <div className="relative">
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">📍 Destination</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 sm:text-sm sm:mb-1.5">📍 Destination</label>
                 <input
                   ref={destRef}
                   type="text"
@@ -156,7 +156,7 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
                   onFocus={() => setShowSugg(true)}
                   onBlur={() => setTimeout(() => setShowSugg(false), 200)}
                   placeholder="e.g. Goa, Manali, Thailand, Bali..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition sm:px-4 sm:py-3"
                 />
                 {showSugg && suggestions.length > 0 && (
                   <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
@@ -174,56 +174,56 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
               </div>
 
               {/* Budget & Days */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">💰 Total Budget (₹)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 sm:text-sm sm:mb-1.5">💰 Total Budget (₹)</label>
                   <input
                     type="number"
                     value={form.totalBudget}
                     onChange={(e) => setForm({ ...form, totalBudget: e.target.value })}
                     placeholder="e.g. 40000"
                     min="1000"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition sm:px-4 sm:py-3"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">📅 Days</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 sm:text-sm sm:mb-1.5">📅 Days</label>
                   <input
                     type="number"
                     value={form.days}
                     onChange={(e) => setForm({ ...form, days: e.target.value })}
                     placeholder="e.g. 4"
                     min="1" max="30"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition sm:px-4 sm:py-3"
                   />
                 </div>
               </div>
 
               {/* Travelers */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">👥 Travelers</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 sm:text-sm sm:mb-1.5">👥 Travelers</label>
                 <input
                   type="number"
                   value={form.travelers}
                   onChange={(e) => setForm({ ...form, travelers: e.target.value })}
                   min="1" max="20"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 outline-none transition sm:px-4 sm:py-3"
                 />
               </div>
 
               {/* Travel Style */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">🎨 Travel Style</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 sm:text-sm sm:mb-2">🎨 Travel Style</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {STYLE_OPTIONS.map((opt) => (
                     <button key={opt.value}
                       onClick={() => setForm({ ...form, travelStyle: opt.value })}
-                      className={`rounded-xl border p-3 text-left transition ${
+                      className={`rounded-xl border p-2.5 text-left transition active:scale-95 sm:p-3 ${
                         form.travelStyle === opt.value
                           ? 'border-violet-400 bg-violet-50 ring-2 ring-violet-100'
                           : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}>
-                      <span className="text-sm font-bold">{opt.label}</span>
+                      <span className="text-xs font-bold sm:text-sm">{opt.label}</span>
                       <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{opt.desc}</p>
                     </button>
                   ))}
@@ -237,7 +237,7 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
               )}
 
               <button onClick={handleOptimize} disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 sm:px-6 sm:py-3.5">
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -252,16 +252,16 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
           )}
 
           {step === 2 && result && (
-            <div className="space-y-5 animate-page-enter">
+            <div className="space-y-4 animate-page-enter sm:space-y-5">
               {/* Destination & Feasibility */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-2 sm:items-center">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{result.destination}</h3>
-                  <p className="text-sm text-slate-500">
+                  <h3 className="text-base font-bold text-slate-900 sm:text-lg">{result.destination}</h3>
+                  <p className="text-xs text-slate-500 sm:text-sm">
                     {form.days} days · {form.travelers} traveler{Number(form.travelers) !== 1 ? 's' : ''} · {STYLE_OPTIONS.find((o) => o.value === form.travelStyle)?.label || form.travelStyle}
                   </p>
                 </div>
-                <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold sm:px-3 sm:py-1.5 sm:text-xs ${
                   result.feasibility === 'comfortable' ? 'bg-emerald-100 text-emerald-700'
                     : result.feasibility === 'moderate' ? 'bg-amber-100 text-amber-700'
                     : result.feasibility === 'tight' ? 'bg-orange-100 text-orange-700'
@@ -276,27 +276,27 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
 
               {/* Budget Breakdown */}
               <div className="rounded-2xl border border-slate-200/60 bg-white shadow-card overflow-hidden">
-                <div className="border-b border-slate-100 bg-slate-50 px-5 py-3 flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-slate-700">Budget Breakdown</h4>
-                  <span className="text-sm font-bold text-violet-600">{formatCurrency(result.totalBudget)}</span>
+                <div className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between sm:px-5 sm:py-3">
+                  <h4 className="text-xs font-bold text-slate-700 sm:text-sm">Budget Breakdown</h4>
+                  <span className="text-xs font-bold text-violet-600 sm:text-sm">{formatCurrency(result.totalBudget)}</span>
                 </div>
                 <div className="divide-y divide-slate-50">
                   {result.budgetItems?.map((item, i) => {
                     const pct = result.totalBudget > 0 ? ((item.amount / result.totalBudget) * 100).toFixed(0) : 0;
                     return (
-                      <div key={i} className="px-5 py-3 hover:bg-slate-50/50 transition">
+                      <div key={i} className="px-3.5 py-2.5 hover:bg-slate-50/50 transition sm:px-5 sm:py-3">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{CATEGORY_ICONS[item.category] || '📦'}</span>
+                            <span className="text-base sm:text-lg">{CATEGORY_ICONS[item.category] || '📦'}</span>
                             <div>
-                              <span className="text-sm font-semibold text-slate-800">{item.category}</span>
+                              <span className="text-xs font-semibold text-slate-800 sm:text-sm">{item.category}</span>
                               {item.description && (
                                 <p className="text-[11px] text-slate-500 leading-tight">{item.description}</p>
                               )}
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="text-sm font-bold text-slate-900">{formatCurrency(item.amount)}</span>
+                            <span className="text-xs font-bold text-slate-900 sm:text-sm">{formatCurrency(item.amount)}</span>
                             <p className="text-[10px] text-slate-400">{pct}%</p>
                           </div>
                         </div>
@@ -312,11 +312,11 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
 
               {/* Tips */}
               {result.tips?.length > 0 && (
-                <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50 p-5">
-                  <h4 className="text-sm font-bold text-amber-800 flex items-center gap-1.5 mb-3">💡 Budget Tips</h4>
-                  <ul className="space-y-2">
+                <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50 p-3.5 sm:p-5">
+                  <h4 className="text-xs font-bold text-amber-800 flex items-center gap-1.5 mb-2 sm:text-sm sm:mb-3">💡 Budget Tips</h4>
+                  <ul className="space-y-1.5 sm:space-y-2">
                     {result.tips.map((tip, i) => (
-                      <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
+                      <li key={i} className="text-xs text-amber-700 flex items-start gap-2 sm:text-sm">
                         <span className="mt-0.5 text-amber-500">•</span>
                         {tip}
                       </li>
@@ -327,22 +327,22 @@ export default function BudgetOptimizer({ isOpen, onClose, onApplyBudget }) {
 
               {/* Per-person cost */}
               {Number(form.travelers) > 1 && (
-                <div className="rounded-2xl border border-indigo-200/60 bg-indigo-50 p-4 text-center">
-                  <p className="text-xs text-indigo-500 font-semibold uppercase">Cost Per Person</p>
-                  <p className="text-2xl font-bold text-indigo-700 mt-1">
+                <div className="rounded-2xl border border-indigo-200/60 bg-indigo-50 p-3 text-center sm:p-4">
+                  <p className="text-[10px] text-indigo-500 font-semibold uppercase sm:text-xs">Cost Per Person</p>
+                  <p className="text-xl font-bold text-indigo-700 mt-0.5 sm:text-2xl sm:mt-1">
                     {formatCurrency(result.totalBudget / Number(form.travelers))}
                   </p>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button onClick={() => { setStep(1); setResult(null); }}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-95 sm:flex-1 sm:py-3 sm:text-sm">
                   ← Adjust & Retry
                 </button>
                 <button onClick={handleApply}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl">
+                  className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg transition hover:shadow-xl active:scale-95 sm:flex-1 sm:py-3 sm:text-sm">
                   🚀 Create Trip with This Budget
                 </button>
               </div>

@@ -1,5 +1,9 @@
 const Agency = require('../models/Agency');
-const { getBookingTotalAmount } = require('./bookingAmountService');
+
+// Helper: extract total amount from a booking object
+function getBookingTotalAmount(booking) {
+  return booking.finalAmount || 0;
+}
 
 // ────────────────────────────────────────────────────────────────────────
 // Real-world OTA Commission Structure

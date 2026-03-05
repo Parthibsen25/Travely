@@ -23,12 +23,15 @@ const {
   updateCollaboratorChecklist,
   removeCollaborator,
   inviteCollaborator,
+  updateCollaboratorRole,
   // Split bills
   getSettlements,
   getSharedSettlements,
   // Budget optimizer
   optimizeBudget,
-  getKnownDestinations
+  getKnownDestinations,
+  // Activity log
+  getActivityLog
 } = require('../controllers/customTripController');
 
 // ── Public routes (shared trips, no auth) ──
@@ -68,8 +71,12 @@ router.post('/:id/share', enableSharing);
 router.delete('/:id/share', disableSharing);
 router.post('/:id/invite', inviteCollaborator);
 router.delete('/:id/collaborators/:collabId', removeCollaborator);
+router.put('/:id/collaborators/:collabId/role', updateCollaboratorRole);
 
 // Split bills
 router.get('/:id/settlements', getSettlements);
+
+// Activity log
+router.get('/:id/activity-log', getActivityLog);
 
 module.exports = router;

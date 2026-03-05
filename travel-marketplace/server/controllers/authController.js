@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Agency = require('../models/Agency');
 const { applyReferral } = require('./referralController');
+const { sendPasswordResetEmail, sendVerificationEmail } = require('../services/emailService');
 
 const generateToken = (payload) => {
   if (!process.env.JWT_SECRET) {
@@ -36,6 +38,16 @@ exports.register = async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email already registered' });
     
     const user = await User.create({ name, email, password });
+
+    // Send email verification
+    try {
+      const verifyToken = user.createEmailVerificationToken();
+      await user.save({ validateBeforeSave: false });
+      await sendVerificationEmail(email, verifyToken, name);
+    } catch (emailErr) {
+      console.error('Verification email failed:', emailErr.message);
+      // Don't block registration if email fails
+    }
 
     // Process referral code if provided
     let referralResult = null;
@@ -267,5 +279,139 @@ exports.changePassword = async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Forgot Password ──
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    // Check both User and Agency
+    let account = await User.findOne({ email });
+    let isAgency = false;
+    if (!account) {
+      account = await Agency.findOne({ email });
+      isAgency = true;
+    }
+
+    // Always return success to prevent email enumeration
+    if (!account) {
+      return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+    }
+
+    if (isAgency) {
+      // For agencies, generate token manually since Agency doesn't have the helper
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      account.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      account.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await account.save({ validateBeforeSave: false });
+      await sendPasswordResetEmail(email, resetToken);
+    } else {
+      const resetToken = account.createPasswordResetToken();
+      await account.save({ validateBeforeSave: false });
+      await sendPasswordResetEmail(email, resetToken);
+    }
+
+    res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Reset Password ──
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Check User first, then Agency
+    let account = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+    if (!account) {
+      account = await Agency.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: Date.now() }
+      });
+    }
+
+    if (!account) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    account.password = password;
+    account.passwordResetToken = undefined;
+    account.passwordResetExpires = undefined;
+    await account.save();
+
+    res.json({ message: 'Password has been reset successfully. You can now log in.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Verify Email ──
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'Verification token is required' });
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.json({ message: 'Email verified successfully!' });
+  } catch (err) {
+    console.error('Verify email error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── Resend Verification Email ──
+exports.resendVerification = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.isEmailVerified) {
+      return res.json({ message: 'Email is already verified' });
+    }
+
+    const verifyToken = user.createEmailVerificationToken();
+    await user.save({ validateBeforeSave: false });
+    await sendVerificationEmail(user.email, verifyToken, user.name);
+
+    res.json({ message: 'Verification email sent!' });
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 };

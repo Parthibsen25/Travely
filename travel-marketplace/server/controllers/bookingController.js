@@ -372,3 +372,80 @@ exports.getAgencyBookings = async (req, res) => {
 };
 
 // Webhook handler will be in payment controller (separate)
+
+// ── Booking Calendar (for agencies) ──
+exports.getBookingCalendar = async (req, res) => {
+  try {
+    const agencyId = req.user.id;
+    const { month, year } = req.query;
+
+    const packages = await Package.find({ agencyId }).select('_id title destination duration').lean();
+    const packageIds = packages.map((p) => p._id);
+
+    // Build date range filter
+    let dateFilter = {};
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      dateFilter = { travelDate: { $gte: startDate, $lte: endDate } };
+    } else {
+      // Default: current month ± 2 months
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0, 23, 59, 59);
+      dateFilter = { travelDate: { $gte: startDate, $lte: endDate } };
+    }
+
+    const bookings = await Booking.find({
+      packageId: { $in: packageIds },
+      status: { $in: ['PAID', 'CONFIRMED', 'COMPLETED', 'PENDING_PAYMENT'] },
+      ...dateFilter
+    })
+      .populate('packageId', 'title destination duration category imageUrl')
+      .populate('userId', 'name email')
+      .sort('travelDate')
+      .lean();
+
+    // Group by date for calendar view
+    const calendarEvents = bookings.map((b) => {
+      const travelDate = new Date(b.travelDate);
+      const duration = b.packageId?.duration || 1;
+      const endDate = new Date(travelDate.getTime() + (duration - 1) * 24 * 60 * 60 * 1000);
+
+      return {
+        id: b._id,
+        title: b.packageId?.title || 'Unknown Package',
+        destination: b.packageId?.destination || '',
+        start: travelDate.toISOString().split('T')[0],
+        end: endDate.toISOString().split('T')[0],
+        duration,
+        status: b.status,
+        travelerName: b.userId?.name || 'N/A',
+        travelerEmail: b.userId?.email || '',
+        numberOfPeople: b.numberOfPeople,
+        amount: b.finalAmount,
+        category: b.packageId?.category || '',
+        color: b.status === 'CONFIRMED' ? '#10b981' : b.status === 'PAID' ? '#0891b2' : b.status === 'COMPLETED' ? '#6366f1' : '#f59e0b'
+      };
+    });
+
+    // Summary stats
+    const dateMap = {};
+    calendarEvents.forEach((ev) => {
+      if (!dateMap[ev.start]) dateMap[ev.start] = { bookings: 0, travelers: 0, revenue: 0 };
+      dateMap[ev.start].bookings += 1;
+      dateMap[ev.start].travelers += ev.numberOfPeople;
+      dateMap[ev.start].revenue += ev.amount;
+    });
+
+    res.json({
+      events: calendarEvents,
+      summary: dateMap,
+      totalBookings: bookings.length,
+      totalTravelers: bookings.reduce((s, b) => s + b.numberOfPeople, 0)
+    });
+  } catch (err) {
+    console.error('Calendar error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

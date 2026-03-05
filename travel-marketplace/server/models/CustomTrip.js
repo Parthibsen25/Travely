@@ -41,6 +41,28 @@ const ChecklistItemSchema = new mongoose.Schema({
   checked: { type: Boolean, default: false }
 });
 
+const ItineraryActivitySchema = new mongoose.Schema({
+  time: { type: String, default: '' },      // e.g. "09:00"
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  category: {
+    type: String,
+    enum: ['Transport', 'Accommodation', 'Food', 'Activities', 'Shopping', 'Other'],
+    default: 'Activities'
+  },
+  estimatedCost: { type: Number, default: 0, min: 0 },
+  location: { type: String, default: '' },
+  notes: { type: String, default: '' },
+  completed: { type: Boolean, default: false }
+});
+
+const ItineraryDaySchema = new mongoose.Schema({
+  dayNumber: { type: Number, required: true },
+  date: { type: Date },
+  title: { type: String, default: '' },       // e.g. "Arrival Day"
+  activities: [ItineraryActivitySchema]
+});
+
 const CollaboratorSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   name: { type: String, trim: true },
@@ -63,6 +85,14 @@ const CustomTripSchema = new mongoose.Schema(
     totalActual: { type: Number, default: 0, min: 0 },
     dailyExpenses: [DailyExpenseSchema],
     checklist: [ChecklistItemSchema],
+    itinerary: [ItineraryDaySchema],
+    activityLog: [{
+      action: { type: String, required: true },    // e.g. 'added_expense', 'updated_budget', 'invited_collaborator'
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      userName: { type: String, default: '' },
+      details: { type: String, default: '' },
+      timestamp: { type: Date, default: Date.now }
+    }],
     budgetLimit: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: 'INR', maxlength: 3 },
     tags: [{ type: String, trim: true }],

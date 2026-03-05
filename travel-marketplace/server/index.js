@@ -26,6 +26,10 @@ const cartRoutes = require('./routes/cartRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const referralRoutes = require('./routes/referralRoutes');
+const currencyRoutes = require('./routes/currencyRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const agencyVerificationRoutes = require('./routes/agencyVerificationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -100,6 +104,10 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/currency', currencyRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/agency-verification', agencyVerificationRoutes);
 
 app.use(errorHandler);
 

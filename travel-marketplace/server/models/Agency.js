@@ -27,7 +27,30 @@ const AgencySchema = new mongoose.Schema(
     },
     gstNumber: { type: String },
     panNumber: { type: String },
-    isSuspended: { type: Boolean, default: false }
+    isSuspended: { type: Boolean, default: false },
+
+    // Password reset
+    passwordResetToken: { type: String },
+    passwordResetExpires: { type: Date },
+
+    // Verification badge system
+    verificationDocuments: {
+      gstCertificate: { type: String }, // Cloudinary URL
+      businessLicense: { type: String },
+      panCard: { type: String },
+      addressProof: { type: String }
+    },
+    verificationSubmittedAt: { type: Date },
+    verificationReviewedAt: { type: Date },
+    verificationNotes: { type: String },
+    trustScore: { type: Number, default: 0, min: 0, max: 100 },
+
+    // Agency profile extras
+    description: { type: String, maxlength: 1000 },
+    phone: { type: String },
+    website: { type: String },
+    address: { type: String },
+    logoUrl: { type: String }
   },
   { timestamps: true }
 );

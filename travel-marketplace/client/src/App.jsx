@@ -40,6 +40,11 @@ import AgencyProfile from './pages/AgencyProfile';
 import MyRequests from './pages/MyRequests';
 
 import NotFound from './pages/NotFound';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import UserAnalytics from './pages/UserAnalytics';
+import AgencyVerification from './pages/AgencyVerification';
 
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminAgencies = React.lazy(() => import('./pages/admin/AdminAgencies'));
@@ -59,6 +64,9 @@ export default function App() {
         <Route path="agency/login" element={<AgencyLogin />} />
         <Route path="agency/register" element={<AgencyRegister />} />
         <Route path="app/shared-trip/:token" element={<SharedTripPage />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="verify-email" element={<VerifyEmail />} />
       </Route>
 
       <Route element={<ProtectedRoute roles={['USER']} />}>
@@ -77,6 +85,7 @@ export default function App() {
           <Route path="my-requests" element={<MyRequests />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="referrals" element={<ReferralPage />} />
+          <Route path="analytics" element={<UserAnalytics />} />
         </Route>
       </Route>
 
@@ -144,6 +153,7 @@ export default function App() {
           <Route path="profile" element={<AgencyProfile />} />
           <Route path="payouts" element={<AgencyPayouts />} />
           <Route path="chat" element={<ChatPage />} />
+          <Route path="verification" element={<AgencyVerification />} />
         </Route>
       </Route>
 
